@@ -1,10 +1,10 @@
 {
-  "name": "wombat-crm",
+  "name": "template-min",
   "version": "1.0.0",
   "scripts": {
-    "install": "cd ./client && npm i",
+    "install:all": "npm install && cd client && npm install",
     "build": "cd client && npm run build",
-    "start:emulators": "firebase emulators:start --only auth,functions,firestore,storage --export-on-exit=emulator-data --import=emulator-data",
+    "start:emulators": "firebase emulators:start --only auth,firestore,storage --export-on-exit=emulator-data --import=emulator-data",
     "start:client": "cd client && npm run dev",
     "test:client": "cd client && npm run test",
     "deploy:prod": "npm run build:all && firebase --project my-project-id deploy"
