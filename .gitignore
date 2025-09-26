@@ -1,0 +1,32 @@
+# Log files
+*.log*
+
+# Build and dist directories
+node_modules/
+build/
+dist/
+
+# Environment files
+*.env*
+
+# Testing
+coverage/
+
+# Firebase
+.firebase/
+emulator-data/
+
+# Claude
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.env/
+
+# Mac
+.DS_Store

@@ -1,0 +1,15 @@
+{
+  "name": "wombat-crm",
+  "version": "1.0.0",
+  "scripts": {
+    "install": "cd ./client && npm i",
+    "build": "cd client && npm run build",
+    "start:emulators": "firebase emulators:start --only auth,functions,firestore,storage --export-on-exit=emulator-data --import=emulator-data",
+    "start:client": "cd client && npm run dev",
+    "test:client": "cd client && npm run test",
+    "deploy:prod": "npm run build:all && firebase --project my-project-id deploy"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.0.0"
+  }
+}
