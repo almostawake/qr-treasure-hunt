@@ -1,8 +1,7 @@
 import { atom, useAtomValue } from 'jotai'
-import { type User } from 'firebase/auth'
 import { initializeApp } from 'firebase/app'
-import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { getStorage, connectStorageEmulator } from 'firebase/storage'
 
 const getFirebaseConfig = async () => {
   if (import.meta.env.DEV) {
@@ -10,6 +9,7 @@ const getFirebaseConfig = async () => {
       apiKey: 'demo-not-required',
       authDomain: 'demo-not-required.firebaseapp.com',
       projectId: 'demo-not-required',
+      storageBucket: 'demo-not-required.appspot.com',
     }
   } else {
     const config = await (await fetch('/__/firebase/init.json')).json()
@@ -21,35 +21,42 @@ const initializeFirebase = async () => {
   const config = await getFirebaseConfig()
   const app = initializeApp(config)
 
-  const auth = getAuth(app)
   const db = getFirestore(app)
+  const storage = getStorage(app)
 
   if (import.meta.env.DEV) {
-    connectAuthEmulator(auth, 'http://127.0.0.1:9099')
-    connectFirestoreEmulator(db, '127.0.0.1', 8080)
+    try {
+      // Use localhost for local development, but allow network access via emulator host config
+      connectFirestoreEmulator(db, '127.0.0.1', 8080)
+    } catch (error) {
+      // Already connected
+    }
+
+    try {
+      connectStorageEmulator(storage, '127.0.0.1', 9199)
+    } catch (error) {
+      // Already connected
+    }
   }
 
-  return { app, auth, db }
+  return { app, db, storage }
 }
 
 export const firebasePromise = initializeFirebase()
 export const getFirebaseServices = async () => {
-  const { auth, db } = await firebasePromise
-  return { auth, db }
+  const { db, storage } = await firebasePromise
+  return { db, storage }
 }
 
-export const userAtom = atom<User | null>(null)
-export const loadingAtom = atom<boolean>(true)
-export const isAuthenticatedAtom = atom((get) => !!get(userAtom))
+export const loadingAtom = atom<boolean>(false)
+export const isOnlineAtom = atom<boolean>(true)
 
 export const useApplicationState = () => {
-  const user = useAtomValue(userAtom)
   const loading = useAtomValue(loadingAtom)
-  const isAuthenticated = useAtomValue(isAuthenticatedAtom)
+  const isOnline = useAtomValue(isOnlineAtom)
 
   return {
-    user,
     loading,
-    isAuthenticated,
+    isOnline,
   }
 }

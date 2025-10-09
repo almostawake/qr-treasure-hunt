@@ -20,6 +20,8 @@ For the local app, visit: http://localhost:5173/
 
 Build before deployment to ensure no compilation errors across the board.
 
-`npm run build`
+`npm run build:all`
+
+Or just deploy (which does a build first).
 
 `npm run deploy`

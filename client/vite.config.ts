@@ -3,7 +3,12 @@ import react from '@vitejs/plugin-react'
 import svgr from 'vite-plugin-svgr'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react(), svgr()],
-  resolve: {},
-})
+  server: {
+    host: '0.0.0.0',
+  },
+  define: {
+    __IS_DEV__: JSON.stringify(command === 'serve'),
+  },
+}))

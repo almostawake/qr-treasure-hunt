@@ -1,34 +1,20 @@
 import {
   AppBar,
   Toolbar,
-  Button,
   Box,
   Typography,
   CircularProgress,
+  ThemeProvider,
 } from '@mui/material'
-import { useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { theme } from './theme'
 import { useApplicationState } from './hooks/ApplicationState'
-import { useUserService } from './hooks/UserService'
+import { HuntList } from './components/HuntList'
+import { HuntEditor } from './components/HuntEditor'
+import { CluePage } from './components/CluePage'
 
 function App() {
-  const { user, loading } = useApplicationState()
-  const userService = useUserService()
-
-  useEffect(() => {
-    const initAuth = async () => {
-      const unsubscribe = await userService.initialize()
-      return unsubscribe
-    }
-    
-    let unsubscribe: (() => void) | undefined
-    initAuth().then(unsub => {
-      unsubscribe = unsub
-    })
-    
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
-  }, [userService])
+  const { loading } = useApplicationState()
 
   if (loading) {
     return (
@@ -46,56 +32,45 @@ function App() {
   }
 
   return (
-    <Box sx={{ width: '100%', height: '100vh' }}>
-      <AppBar
-        position="static"
-        sx={{
-          backgroundColor: 'white',
-          color: 'black',
-          boxShadow: '0px 1px 3px rgba(0,0,0,0.1)',
-          width: '100%',
-        }}
-      >
-        <Toolbar sx={{ justifyContent: 'flex-end', width: '100%' }}>
-          {user ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="body2">
-                Welcome, {user.displayName || user.email}
-              </Typography>
-              <Button
-                variant="outlined"
-                onClick={() => userService.logout()}
-                sx={{
-                  color: 'black',
-                  borderColor: 'black',
-                  '&:hover': {
-                    backgroundColor: 'black',
-                    color: 'white',
-                  },
-                }}
-              >
-                Logout
-              </Button>
-            </Box>
-          ) : (
-            <Button
-              variant="outlined"
-              onClick={() => userService.login()}
-              sx={{
-                color: 'black',
-                borderColor: 'black',
-                '&:hover': {
-                  backgroundColor: 'black',
-                  color: 'white',
-                },
-              }}
-            >
-              Login
-            </Button>
-          )}
-        </Toolbar>
-      </AppBar>
-    </Box>
+    <ThemeProvider theme={theme}>
+      <Router>
+        <Box
+          sx={{ width: '100%', minHeight: '100vh', backgroundColor: '#f5f5f5' }}
+        >
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <>
+                  <AppBar
+                    position="static"
+                    sx={{
+                      backgroundColor: 'white',
+                      color: 'black',
+                      boxShadow: '0px 1px 3px rgba(0,0,0,0.1)',
+                      width: '100%',
+                    }}
+                  >
+                    <Toolbar>
+                      <Typography
+                        variant="h6"
+                        component="div"
+                        sx={{ flexGrow: 1 }}
+                      >
+                        QR Treasure Hunts
+                      </Typography>
+                    </Toolbar>
+                  </AppBar>
+                  <HuntList />
+                </>
+              }
+            />
+            <Route path="/hunt/:id" element={<HuntEditor />} />
+            <Route path="/hunt/:huntId/clue/:clueId" element={<CluePage />} />
+          </Routes>
+        </Box>
+      </Router>
+    </ThemeProvider>
   )
 }
 
