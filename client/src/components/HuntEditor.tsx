@@ -39,20 +39,21 @@ export const HuntEditor = () => {
     addToKnownHunts()
 
     const setupSubscriptions = async () => {
-      // Subscribe to hunt changes
-      const huntUnsubscribe = await huntService.subscribeToHunts((hunts) => {
-        const currentHunt = hunts.find((h) => h.id === id)
-        if (currentHunt) {
-          setHunt(currentHunt)
-          setHuntName(currentHunt.displayName)
+      // Subscribe to this specific hunt
+      const huntUnsubscribe = await huntService.subscribeToHunt(id, (hunt) => {
+        if (hunt) {
+          setHunt(hunt)
+          setHuntName(hunt.displayName)
         } else {
-          // Hunt doesn't exist - remove from known hunts and redirect
+          // Hunt was deleted by another user
           const removeAndRedirect = async () => {
             const { LocalHuntStorage } = await import(
               '../hooks/LocalHuntStorage'
             )
             LocalHuntStorage.removeKnownHuntId(id)
-            navigate('/')
+            navigate('/', {
+              state: { message: 'The hunt you were editing was deleted by another user.' }
+            })
           }
           removeAndRedirect()
         }
@@ -138,7 +139,7 @@ export const HuntEditor = () => {
   }
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <AppBar
         position="static"

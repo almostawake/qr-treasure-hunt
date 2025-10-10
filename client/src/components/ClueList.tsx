@@ -316,7 +316,7 @@ const ClueItem = ({
           <TextField
             fullWidth
             label="Clue"
-            variant="outlined"
+            variant="filled"
             value={clueText}
             onChange={(e) => setClueText(e.target.value)}
             onBlur={handleClueBlur}
@@ -330,7 +330,7 @@ const ClueItem = ({
           <TextField
             fullWidth
             label="Hint"
-            variant="outlined"
+            variant="filled"
             value={hintText}
             onChange={(e) => setHintText(e.target.value)}
             onBlur={handleHintBlur}

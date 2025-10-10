@@ -188,6 +188,30 @@ export class HuntService {
     return unsubscribe
   }
 
+  // Subscribe to a single hunt document
+  async subscribeToHunt(
+    huntId: string,
+    callback: (hunt: Hunt | null) => void
+  ): Promise<() => void> {
+    const { db } = await getFirebaseServices()
+    const huntRef = doc(db, 'hunts', huntId)
+
+    const unsubscribe = onSnapshot(huntRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const hunt = convertFirestoreHunt({
+          id: snapshot.id,
+          data: () => snapshot.data() as FirestoreHunt,
+        })
+        callback(hunt)
+      } else {
+        // Hunt doesn't exist (was deleted)
+        callback(null)
+      }
+    })
+
+    return unsubscribe
+  }
+
   // Subscribe to known hunts only (filtered by local storage)
   async subscribeToKnownHunts(
     callback: (hunts: Hunt[]) => void

@@ -89,19 +89,20 @@ export const CluePage = () => {
     addToKnownHunts()
 
     const setupSubscriptions = async () => {
-      // Subscribe to hunt changes
-      const huntUnsubscribe = await huntService.subscribeToHunts((hunts) => {
-        const currentHunt = hunts.find((h) => h.id === huntId)
-        if (currentHunt) {
-          setHunt(currentHunt)
+      // Subscribe to this specific hunt
+      const huntUnsubscribe = await huntService.subscribeToHunt(huntId, (hunt) => {
+        if (hunt) {
+          setHunt(hunt)
         } else {
-          // Hunt doesn't exist - remove from known hunts and redirect
+          // Hunt was deleted by another user
           const removeAndRedirect = async () => {
             const { LocalHuntStorage } = await import(
               '../hooks/LocalHuntStorage'
             )
             LocalHuntStorage.removeKnownHuntId(huntId)
-            navigate('/')
+            navigate('/', {
+              state: { message: 'The hunt you were viewing was deleted by another user.' }
+            })
           }
           removeAndRedirect()
         }

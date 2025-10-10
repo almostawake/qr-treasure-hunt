@@ -7,6 +7,8 @@ import {
   Fab,
   IconButton,
   Tooltip,
+  Snackbar,
+  Alert,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -14,30 +16,77 @@ import {
   Print as PrintIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useHuntService } from '../hooks/HuntService'
 import type { Hunt } from '../types'
 
 export const HuntList = () => {
   const [hunts, setHunts] = useState<Hunt[]>([])
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState('')
   const huntService = useHuntService()
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
-    const setupSubscription = async () => {
-      const unsubscribe = await huntService.subscribeToKnownHunts(setHunts)
-      return unsubscribe
+    const setupSubscriptions = async () => {
+      const { LocalHuntStorage } = await import('../hooks/LocalHuntStorage')
+      const knownHuntIds = LocalHuntStorage.getKnownHuntIds()
+
+      // Map to store unsubscribe functions for each hunt
+      const unsubscribes = new Map<string, () => void>()
+
+      // Map to store hunt data
+      const huntData = new Map<string, Hunt>()
+
+      // Helper to update hunts state with current data, sorted by updatedAt desc
+      const updateHunts = () => {
+        const sortedHunts = Array.from(huntData.values()).sort(
+          (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
+        )
+        setHunts(sortedHunts)
+      }
+
+      // Subscribe to each known hunt individually
+      for (const huntId of knownHuntIds) {
+        const unsubscribe = await huntService.subscribeToHunt(huntId, (hunt) => {
+          if (hunt) {
+            huntData.set(huntId, hunt)
+          } else {
+            // Hunt was deleted - remove from local storage and data
+            huntData.delete(huntId)
+            LocalHuntStorage.removeKnownHuntId(huntId)
+          }
+          updateHunts()
+        })
+        unsubscribes.set(huntId, unsubscribe)
+      }
+
+      return unsubscribes
     }
 
-    let unsubscribe: (() => void) | undefined
-    setupSubscription().then((unsub) => {
-      unsubscribe = unsub
+    let unsubscribes: Map<string, () => void> | undefined
+    setupSubscriptions().then((unsubs) => {
+      unsubscribes = unsubs
     })
 
     return () => {
-      if (unsubscribe) unsubscribe()
+      if (unsubscribes) {
+        unsubscribes.forEach((unsubscribe) => unsubscribe())
+      }
     }
   }, [huntService])
+
+  // Check for messages passed via navigation state
+  useEffect(() => {
+    const state = location.state as { message?: string } | null
+    if (state?.message) {
+      setSnackbarMessage(state.message)
+      setSnackbarOpen(true)
+      // Clear the state so message doesn't show again on refresh
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location, navigate])
 
   const handleCreateHunt = async () => {
     try {
@@ -467,6 +516,22 @@ export const HuntList = () => {
       >
         <AddIcon />
       </Fab>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="warning"
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
