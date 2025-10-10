@@ -234,10 +234,10 @@ export const CluePage = () => {
             </ToggleButton>
             <ToggleButton
               value="media"
-              aria-label="show media"
+              aria-label="show visual"
               disabled={!clue.mediaUrl}
             >
-              Media
+              Visual
             </ToggleButton>
           </ToggleButtonGroup>
         </Box>

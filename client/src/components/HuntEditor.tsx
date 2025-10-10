@@ -86,6 +86,17 @@ export const HuntEditor = () => {
     }
   }, [id, huntService, navigate])
 
+  // Auto-focus hunt name field for empty hunts (desktop only)
+  useEffect(() => {
+    if (hunt && clues.length === 0 && !hunt.displayName) {
+      // Only auto-focus on desktop - mobile browsers block programmatic keyboard opening
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      if (!isMobile) {
+        setIsEditing(true)
+      }
+    }
+  }, [hunt, clues.length])
+
   const handleNameChange = async (newName: string) => {
     if (!id || !hunt) return
 
@@ -230,17 +241,75 @@ export const HuntEditor = () => {
         {clues.length === 0 ? (
           <Paper
             sx={{
-              p: 4,
-              textAlign: 'center',
+              p: { xs: 3, sm: 5 },
+              maxWidth: 600,
+              mx: 'auto',
               backgroundColor: 'grey.50',
             }}
           >
-            <Typography variant="body1" color="text.secondary" gutterBottom>
-              No clues yet
+            <Typography
+              variant="h6"
+              sx={{ mb: 3, fontWeight: 500, textAlign: 'center' }}
+            >
+              Let's create your treasure hunt
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Add your first clue to get started!
-            </Typography>
+
+            <Box sx={{ textAlign: 'left', '& > *': { mb: 2.5 } }}>
+              {/* Step 1 */}
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  1. Name it
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ pl: 2.5 }}>
+                  Tap "Unnamed hunt" above. Something like "Burradoo Rd treasure hunt" or "Hunt for Alex"
+                </Typography>
+              </Box>
+
+              {/* Step 2 */}
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  2. Add steps (locations)
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ pl: 2.5 }}>
+                  Use the + button below. You can give clues and hints to lead them to that location and even upload images/videos in case they get stuck
+                </Typography>
+              </Box>
+
+              {/* Step 3 */}
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  3. Customize as you go
+                </Typography>
+                <Box sx={{ pl: 2.5 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    • Drag ⋮⋮ to reorder steps
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    • Hover over or long press icons to see what they do
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Step 4 */}
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  4. Preview each step
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ pl: 2.5 }}>
+                  Use 👁 to see what hunters will see to lead them to that location
+                </Typography>
+              </Box>
+
+              {/* Step 5 */}
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  5. Print the QR codes
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ pl: 2.5 }}>
+                  Cut them out, place them in their locations. Maybe add a prize at each location!
+                </Typography>
+              </Box>
+            </Box>
           </Paper>
         ) : (
           <ClueList

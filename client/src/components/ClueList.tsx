@@ -63,6 +63,15 @@ const ClueItem = ({
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false)
   const [mediaDisplayUrl, setMediaDisplayUrl] = useState<string | null>(null)
 
+  // Sync local state with prop updates from Firestore
+  useEffect(() => {
+    setClueText(clue.text)
+  }, [clue.text])
+
+  useEffect(() => {
+    setHintText(clue.hint)
+  }, [clue.hint])
+
   // Resolve storage path to URL dynamically
   useEffect(() => {
     const resolveMediaUrl = async () => {
@@ -324,6 +333,7 @@ const ClueItem = ({
             onPointerDown={(e) => e.stopPropagation()}
             multiline
             minRows={2}
+            placeholder="A cryptic clue to find this step/location"
             sx={{ mb: 2 }}
           />
 
@@ -338,7 +348,7 @@ const ClueItem = ({
             onPointerDown={(e) => e.stopPropagation()}
             multiline
             minRows={1}
-            placeholder="Optional hint for this clue..."
+            placeholder="Optional extra help if the hunter is stuck"
           />
 
           {/* Action Icons - Centered */}
@@ -346,94 +356,109 @@ const ClueItem = ({
             sx={{
               mt: 2,
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               justifyContent: 'center',
-              gap: 2,
+              gap: 3,
             }}
           >
             {/* Preview Icon */}
-            <Tooltip
-              title="Simulate playing this step in the hunt"
-              enterDelay={1000}
-              enterTouchDelay={0}
-              leaveTouchDelay={3000}
-            >
-              <IconButton
-                size="small"
-                sx={{
-                  color: 'text.secondary',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  },
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  window.open(`/hunt/${clue.huntId}/clue/${clue.id}`, '_blank')
-                }}
-              >
-                <VisibilityIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-
-            {/* Media Upload/Management */}
-            <Tooltip
-              title="Manage media hints (photos, videos)"
-              enterDelay={1000}
-              enterTouchDelay={0}
-              leaveTouchDelay={3000}
-            >
-              <Badge
-                variant="dot"
-                color="success"
-                invisible={!clue.mediaUrl}
-                sx={{
-                  '& .MuiBadge-dot': {
-                    right: 2,
-                    top: 2,
-                  },
-                }}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+              <Tooltip
+                title="Simulate playing this step in the hunt"
+                enterDelay={1000}
+                enterTouchDelay={0}
+                leaveTouchDelay={3000}
               >
                 <IconButton
                   size="small"
-                  disabled={uploading}
-                  onClick={handleMediaClick}
                   sx={{
-                    color: clue.mediaUrl ? 'primary.main' : 'text.secondary',
+                    color: 'text.secondary',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    },
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    window.open(`/hunt/${clue.huntId}/clue/${clue.id}`, '_blank')
+                  }}
+                >
+                  <VisibilityIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                Preview
+              </Typography>
+            </Box>
+
+            {/* Visual Hint Upload/Management */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+              <Tooltip
+                title="Manage visual hints (photos, videos)"
+                enterDelay={1000}
+                enterTouchDelay={0}
+                leaveTouchDelay={3000}
+              >
+                <Badge
+                  variant="dot"
+                  color="success"
+                  invisible={!clue.mediaUrl}
+                  sx={{
+                    '& .MuiBadge-dot': {
+                      right: 2,
+                      top: 2,
+                    },
+                  }}
+                >
+                  <IconButton
+                    size="small"
+                    disabled={uploading}
+                    onClick={handleMediaClick}
+                    sx={{
+                      color: clue.mediaUrl ? 'primary.main' : 'text.secondary',
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                      },
+                    }}
+                  >
+                    {clue.mediaUrl ? (
+                      <PhotoIcon fontSize="small" />
+                    ) : (
+                      <AddPhotoAlternateIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                </Badge>
+              </Tooltip>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                Visual hint
+              </Typography>
+            </Box>
+
+            {/* Delete Icon */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+              <Tooltip
+                title="Delete this step"
+                enterDelay={1000}
+                enterTouchDelay={0}
+                leaveTouchDelay={3000}
+              >
+                <IconButton
+                  size="small"
+                  onClick={handleDelete}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  sx={{
+                    color: 'text.secondary',
                     '&:hover': {
                       backgroundColor: 'rgba(0, 0, 0, 0.04)',
                     },
                   }}
                 >
-                  {clue.mediaUrl ? (
-                    <PhotoIcon fontSize="small" />
-                  ) : (
-                    <AddPhotoAlternateIcon fontSize="small" />
-                  )}
+                  <DeleteIcon fontSize="small" />
                 </IconButton>
-              </Badge>
-            </Tooltip>
-
-            {/* Delete Icon */}
-            <Tooltip
-              title="Delete this step"
-              enterDelay={1000}
-              enterTouchDelay={0}
-              leaveTouchDelay={3000}
-            >
-              <IconButton
-                size="small"
-                onClick={handleDelete}
-                onPointerDown={(e) => e.stopPropagation()}
-                sx={{
-                  color: 'text.secondary',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  },
-                }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+              </Tooltip>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                Delete
+              </Typography>
+            </Box>
           </Box>
 
           {uploading && (
@@ -467,7 +492,7 @@ const ClueItem = ({
               justifyContent: 'space-between',
             }}
           >
-            <Typography variant="h6">Manage Media</Typography>
+            <Typography variant="h6">Manage Visual Hint</Typography>
             <IconButton
               onClick={() => setMediaDialogOpen(false)}
               sx={{ color: 'grey.500' }}
@@ -565,10 +590,10 @@ const ClueItem = ({
                 sx={{ fontSize: 80, color: 'grey.400', mb: 2 }}
               />
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                No media uploaded yet
+                No visual clues uploaded yet
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Upload a photo or video to help with this clue
+                Upload an image or video as a super hint
               </Typography>
             </Box>
           )}
