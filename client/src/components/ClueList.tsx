@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Paper,
@@ -61,6 +61,37 @@ const ClueItem = ({
   const [hintText, setHintText] = useState(clue.hint)
   const [uploading, setUploading] = useState(false)
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false)
+  const [mediaDisplayUrl, setMediaDisplayUrl] = useState<string | null>(null)
+
+  // Resolve storage path to URL dynamically
+  useEffect(() => {
+    const resolveMediaUrl = async () => {
+      if (!clue.mediaUrl) {
+        setMediaDisplayUrl(null)
+        return
+      }
+
+      // If it's already a full URL (old format), use it directly
+      if (clue.mediaUrl.startsWith('http://') || clue.mediaUrl.startsWith('https://')) {
+        setMediaDisplayUrl(clue.mediaUrl)
+        return
+      }
+
+      // It's a storage path - resolve it dynamically
+      try {
+        const { getFirebaseServices } = await import('../hooks/ApplicationState')
+        const { storage } = await getFirebaseServices()
+        const storageRef = ref(storage, clue.mediaUrl)
+        const url = await getDownloadURL(storageRef)
+        setMediaDisplayUrl(url)
+      } catch {
+        // If resolution fails, set to null
+        setMediaDisplayUrl(null)
+      }
+    }
+
+    resolveMediaUrl()
+  }, [clue.mediaUrl])
 
   const {
     attributes,
@@ -80,7 +111,7 @@ const ClueItem = ({
   const handleClueUpdate = async (field: 'text' | 'hint', value: string) => {
     try {
       await huntService.updateClue(clue.id, { [field]: value })
-    } catch (error) {
+    } catch {
       // Silently fail
     }
   }
@@ -143,13 +174,13 @@ const ClueItem = ({
       // Upload file
       const snapshot = await uploadBytes(storageRef, file)
 
-      // Get download URL
-      const downloadURL = await getDownloadURL(snapshot.ref)
+      // Store the storage path (not the full URL) for dynamic resolution
+      const storagePath = snapshot.ref.fullPath
 
-      // Update clue with real URL
+      // Update clue with storage path
       const mediaType = file.type.startsWith('image/') ? 'image' : 'video'
       await huntService.updateClue(clue.id, {
-        mediaUrl: downloadURL,
+        mediaUrl: storagePath,
         mediaType: mediaType as 'image' | 'video',
       })
 
@@ -179,7 +210,7 @@ const ClueItem = ({
     fileInput.accept = 'image/*,video/*'
     fileInput.capture = 'environment'
     fileInput.onchange = (e) => {
-      handleFileUpload(e as any)
+      handleFileUpload(e as React.ChangeEvent<HTMLInputElement>)
       // Dialog will close after successful upload
     }
     fileInput.click()
@@ -192,7 +223,7 @@ const ClueItem = ({
         mediaType: undefined,
       })
       setMediaDialogOpen(false)
-    } catch (error) {
+    } catch {
       alert('Failed to delete media. Please try again.')
     }
   }
@@ -204,7 +235,7 @@ const ClueItem = ({
     fileInput.accept = 'image/*,video/*'
     fileInput.capture = 'environment'
     fileInput.onchange = (e) => {
-      handleFileUpload(e as any)
+      handleFileUpload(e as React.ChangeEvent<HTMLInputElement>)
       // Dialog will close after successful upload
     }
     fileInput.click()
@@ -481,7 +512,7 @@ const ClueItem = ({
             </Backdrop>
           )}
 
-          {clue.mediaUrl ? (
+          {mediaDisplayUrl ? (
             <Box
               sx={{
                 flex: 1,
@@ -495,7 +526,7 @@ const ClueItem = ({
             >
               {clue.mediaType === 'image' ? (
                 <img
-                  src={clue.mediaUrl}
+                  src={mediaDisplayUrl}
                   alt="Clue media"
                   style={{
                     maxWidth: '100%',
@@ -507,7 +538,7 @@ const ClueItem = ({
                 />
               ) : (
                 <video
-                  src={clue.mediaUrl}
+                  src={mediaDisplayUrl}
                   controls
                   style={{
                     maxWidth: '100%',
@@ -645,7 +676,7 @@ export const ClueList = ({
 
     try {
       await huntService.deleteClue(clue.huntId, clueId)
-    } catch (error) {
+    } catch {
       // Silently fail
     }
   }

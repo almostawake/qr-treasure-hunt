@@ -26,15 +26,16 @@ const initializeFirebase = async () => {
 
   if (import.meta.env.DEV) {
     try {
-      // Use localhost for local development, but allow network access via emulator host config
-      connectFirestoreEmulator(db, '127.0.0.1', 8080)
-    } catch (error) {
+      const devHost = window.location.hostname
+      connectFirestoreEmulator(db, devHost, 8080)
+    } catch {
       // Already connected
     }
 
     try {
-      connectStorageEmulator(storage, '127.0.0.1', 9199)
-    } catch (error) {
+      const devHost = window.location.hostname
+      connectStorageEmulator(storage, devHost, 9199)
+    } catch {
       // Already connected
     }
   }

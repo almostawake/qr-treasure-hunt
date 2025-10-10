@@ -7,7 +7,7 @@ export class LocalHuntStorage {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       return stored ? JSON.parse(stored) : []
-    } catch (error) {
+    } catch {
       return []
     }
   }
@@ -20,7 +20,7 @@ export class LocalHuntStorage {
         const updatedIds = [...knownIds, huntId]
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedIds))
       }
-    } catch (error) {
+    } catch {
       // Silently fail - not critical
     }
   }
@@ -31,7 +31,7 @@ export class LocalHuntStorage {
       const knownIds = this.getKnownHuntIds()
       const updatedIds = knownIds.filter((id) => id !== huntId)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedIds))
-    } catch (error) {
+    } catch {
       // Silently fail - not critical
     }
   }
@@ -45,7 +45,7 @@ export class LocalHuntStorage {
   static clearKnownHunts(): void {
     try {
       localStorage.removeItem(STORAGE_KEY)
-    } catch (error) {
+    } catch {
       // Silently fail - not critical
     }
   }

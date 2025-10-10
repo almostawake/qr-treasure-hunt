@@ -25,6 +25,38 @@ export const CluePage = () => {
   const [currentView, setCurrentView] = useState<'clue' | 'hint' | 'media'>(
     'clue'
   )
+  const [mediaDisplayUrl, setMediaDisplayUrl] = useState<string | null>(null)
+
+  // Resolve storage path to URL dynamically
+  useEffect(() => {
+    const resolveMediaUrl = async () => {
+      if (!clue?.mediaUrl) {
+        setMediaDisplayUrl(null)
+        return
+      }
+
+      // If it's already a full URL (old format), use it directly
+      if (clue.mediaUrl.startsWith('http://') || clue.mediaUrl.startsWith('https://')) {
+        setMediaDisplayUrl(clue.mediaUrl)
+        return
+      }
+
+      // It's a storage path - resolve it dynamically
+      try {
+        const { getFirebaseServices } = await import('../hooks/ApplicationState')
+        const { storage } = await getFirebaseServices()
+        const { ref, getDownloadURL } = await import('firebase/storage')
+        const storageRef = ref(storage, clue.mediaUrl)
+        const url = await getDownloadURL(storageRef)
+        setMediaDisplayUrl(url)
+      } catch {
+        // If resolution fails, set to null
+        setMediaDisplayUrl(null)
+      }
+    }
+
+    resolveMediaUrl()
+  }, [clue?.mediaUrl])
 
   const handleScanNext = () => {
     // Create file input to trigger camera
@@ -254,10 +286,10 @@ export const CluePage = () => {
 
           {currentView === 'media' && (
             <>
-              {clue.mediaUrl ? (
+              {mediaDisplayUrl ? (
                 clue.mediaType === 'image' ? (
                   <img
-                    src={clue.mediaUrl}
+                    src={mediaDisplayUrl}
                     alt="Clue media hint"
                     style={{
                       maxWidth: '100%',
@@ -269,7 +301,7 @@ export const CluePage = () => {
                   />
                 ) : (
                   <video
-                    src={clue.mediaUrl}
+                    src={mediaDisplayUrl}
                     controls
                     style={{
                       maxWidth: '100%',

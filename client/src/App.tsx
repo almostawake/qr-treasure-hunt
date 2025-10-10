@@ -6,6 +6,7 @@ import {
   CircularProgress,
   ThemeProvider,
 } from '@mui/material'
+import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { theme } from './theme'
 import { useApplicationState } from './hooks/ApplicationState'
@@ -15,6 +16,35 @@ import { CluePage } from './components/CluePage'
 
 function App() {
   const { loading } = useApplicationState()
+
+  // Remove Firebase emulator warning in dev mode only
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const removeEmulatorWarning = () => {
+        // Look for elements containing emulator warning text
+        const elements = document.querySelectorAll('div, span, p')
+        elements.forEach((el) => {
+          if (
+            el.textContent?.includes('Running in emulator mode') ||
+            el.textContent?.includes('Do not use with production credentials')
+          ) {
+            el.remove()
+          }
+        })
+      }
+
+      // Remove immediately and set up observer for dynamic content
+      removeEmulatorWarning()
+
+      const observer = new MutationObserver(removeEmulatorWarning)
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      })
+
+      return () => observer.disconnect()
+    }
+  }, [])
 
   if (loading) {
     return (

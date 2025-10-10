@@ -43,7 +43,7 @@ export const HuntList = () => {
     try {
       const huntId = await huntService.createHunt('New Treasure Hunt')
       navigate(`/hunt/${huntId}`)
-    } catch (error) {
+    } catch {
       // Silently fail
     }
   }
@@ -54,7 +54,7 @@ export const HuntList = () => {
     if (confirm(`Delete "${hunt.displayName}"? This cannot be undone.`)) {
       try {
         await huntService.deleteHunt(hunt.id)
-      } catch (error) {
+      } catch {
         // Silently fail
       }
     }
@@ -80,7 +80,7 @@ export const HuntList = () => {
     e.stopPropagation()
 
     // Get clues for this hunt
-    const clues = await new Promise<any[]>((resolve) => {
+    const clues = await new Promise<Clue[]>((resolve) => {
       huntService.subscribeToClues(hunt.id, (clues) => {
         resolve(clues)
       })

@@ -90,7 +90,7 @@ export const HuntEditor = () => {
 
     try {
       await huntService.updateHuntName(id, newName)
-    } catch (error) {
+    } catch {
       // Revert on error
       setHuntName(hunt.displayName)
     }
@@ -114,7 +114,7 @@ export const HuntEditor = () => {
 
     try {
       await huntService.createClue(id)
-    } catch (error) {
+    } catch {
       // Silently fail
     }
   }
@@ -124,7 +124,7 @@ export const HuntEditor = () => {
 
     try {
       await huntService.updateClueOrder(id, newOrder)
-    } catch (error) {
+    } catch {
       // Silently fail
     }
   }

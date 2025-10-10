@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase/firestore'
+
 export interface Hunt {
   id: string
   displayName: string
@@ -20,8 +22,8 @@ export interface Clue {
 export interface FirestoreHunt {
   id: string
   displayName: string
-  createdAt: any // Firestore Timestamp
-  updatedAt: any // Firestore Timestamp
+  createdAt: Timestamp
+  updatedAt: Timestamp
   clueOrder: string[]
 }
 

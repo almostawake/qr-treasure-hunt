@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { useSetAtom } from 'jotai'
 import {
   collection,
   doc,
@@ -14,11 +13,13 @@ import {
   getDocs,
   getDoc,
 } from 'firebase/firestore'
-import { loadingAtom, getFirebaseServices } from './ApplicationState'
+import { getFirebaseServices } from './ApplicationState'
 import type { Hunt, Clue, FirestoreHunt, FirestoreClue } from '../types'
 
 // Convert Firestore timestamp to Date
-const convertFirestoreHunt = (doc: any): Hunt => ({
+const convertFirestoreHunt = (
+  doc: { id: string; data: () => FirestoreHunt }
+): Hunt => ({
   id: doc.id,
   displayName: doc.data().displayName,
   createdAt: doc.data().createdAt.toDate(),
@@ -26,7 +27,9 @@ const convertFirestoreHunt = (doc: any): Hunt => ({
   clueOrder: doc.data().clueOrder || [],
 })
 
-const convertFirestoreClue = (doc: any): Clue => ({
+const convertFirestoreClue = (
+  doc: { id: string; data: () => FirestoreClue }
+): Clue => ({
   id: doc.id,
   huntId: doc.data().huntId,
   text: doc.data().text,
@@ -37,8 +40,8 @@ const convertFirestoreClue = (doc: any): Clue => ({
 })
 
 export class HuntService {
-  constructor(_setLoading: (loading: boolean) => void) {
-    // setLoading parameter available but not currently used
+  constructor() {
+    // No parameters needed currently
   }
 
   // Create a new hunt
@@ -241,7 +244,5 @@ export class HuntService {
 }
 
 export const useHuntService = () => {
-  const setLoading = useSetAtom(loadingAtom)
-
-  return useMemo(() => new HuntService(setLoading), [setLoading])
+  return useMemo(() => new HuntService(), [])
 }
