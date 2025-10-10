@@ -100,13 +100,14 @@ export const HuntEditor = () => {
   const handleNameBlur = () => {
     setIsEditing(false)
     if (huntName.trim() !== hunt?.displayName) {
-      handleNameChange(huntName.trim() || 'Untitled Hunt')
+      handleNameChange(huntName.trim())
     }
   }
 
   const handleNameKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
-      handleNameBlur()
+      event.preventDefault()
+      ;(event.target as HTMLElement).blur()
     }
   }
 
@@ -165,6 +166,7 @@ export const HuntEditor = () => {
                 onKeyPress={handleNameKeyPress}
                 autoFocus
                 variant="standard"
+                label="Hunt name"
                 sx={{
                   flexGrow: 1,
                   '& .MuiInput-underline:before': {
@@ -193,10 +195,11 @@ export const HuntEditor = () => {
                   px: 1,
                   py: 0.5,
                   borderRadius: 1,
+                  color: hunt.displayName ? 'inherit' : 'text.secondary',
                 }}
                 onClick={() => setIsEditing(true)}
               >
-                {hunt.displayName}
+                {hunt.displayName || 'Unnamed hunt'}
               </Typography>
             )}
 

@@ -90,7 +90,7 @@ export const HuntList = () => {
 
   const handleCreateHunt = async () => {
     try {
-      const huntId = await huntService.createHunt('New Treasure Hunt')
+      const huntId = await huntService.createHunt('')
       navigate(`/hunt/${huntId}`)
     } catch {
       // Silently fail
@@ -409,9 +409,10 @@ export const HuntList = () => {
                       fontSize: { xs: '1.1rem', sm: '1.25rem' },
                       fontWeight: 500,
                       lineHeight: 1.3,
+                      color: hunt.displayName ? 'inherit' : 'text.secondary',
                     }}
                   >
-                    {hunt.displayName}
+                    {hunt.displayName || 'Unnamed hunt'}
                   </Typography>
 
                   <Box
