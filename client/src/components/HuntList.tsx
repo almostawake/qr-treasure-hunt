@@ -206,20 +206,20 @@ export const HuntList = () => {
             .qr-grid {
               display: flex;
               flex-wrap: wrap;
-              justify-content: space-between;
-              gap: 10mm;
+              justify-content: flex-start;
+              gap: 8mm;
               align-items: flex-start;
             }
-            
+
             .qr-item {
-              width: 45mm;
+              width: 42mm;
               text-align: center;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               orphans: 1;
               widows: 1;
-              margin-bottom: 15mm;
-              flex: 0 0 45mm;
+              margin-bottom: 12mm;
+              flex: 0 0 42mm;
             }
             
             .qr-content {
@@ -235,9 +235,9 @@ export const HuntList = () => {
               line-height: 1.2;
               word-wrap: break-word;
               hyphens: auto;
-              max-width: 45mm;
+              max-width: 42mm;
             }
-            
+
             .hint-text {
               font-size: 9px;
               color: #666;
@@ -246,7 +246,7 @@ export const HuntList = () => {
               word-wrap: break-word;
               font-style: italic;
               hyphens: auto;
-              max-width: 45mm;
+              max-width: 42mm;
             }
             
             .qr-overlay {
@@ -327,7 +327,34 @@ export const HuntList = () => {
           
           <script>
             window.onload = function() {
-              // QR codes loaded via QR Server API
+              // Wait for all QR code images to load before printing
+              const images = document.querySelectorAll('img');
+              let loadedCount = 0;
+              const totalImages = images.length;
+
+              if (totalImages === 0) {
+                window.print();
+                return;
+              }
+
+              function checkAllLoaded() {
+                loadedCount++;
+                if (loadedCount === totalImages) {
+                  // Small delay to ensure rendering is complete
+                  setTimeout(() => {
+                    window.print();
+                  }, 100);
+                }
+              }
+
+              images.forEach(img => {
+                if (img.complete) {
+                  checkAllLoaded();
+                } else {
+                  img.onload = checkAllLoaded;
+                  img.onerror = checkAllLoaded; // Still print even if an image fails
+                }
+              });
             };
           </script>
         </body>
