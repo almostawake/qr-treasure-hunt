@@ -193,8 +193,7 @@ const ClueItem = ({
         mediaType: mediaType as 'image' | 'video',
       })
 
-      // Close dialog after successful upload
-      setMediaDialogOpen(false)
+      // Don't close dialog - let user see the uploaded media
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error'
@@ -220,7 +219,7 @@ const ClueItem = ({
     fileInput.capture = 'environment'
     fileInput.onchange = (e) => {
       handleFileUpload(e as React.ChangeEvent<HTMLInputElement>)
-      // Dialog will close after successful upload
+      // Dialog stays open to show uploaded media
     }
     fileInput.click()
   }
@@ -238,14 +237,14 @@ const ClueItem = ({
   }
 
   const handleReplaceMedia = () => {
-    // Don't close dialog - keep it open for upload progress
+    // Keep dialog open for upload progress and to show result
     const fileInput = document.createElement('input')
     fileInput.type = 'file'
     fileInput.accept = 'image/*,video/*'
     fileInput.capture = 'environment'
     fileInput.onchange = (e) => {
       handleFileUpload(e as React.ChangeEvent<HTMLInputElement>)
-      // Dialog will close after successful upload
+      // Dialog stays open to show uploaded media
     }
     fileInput.click()
   }
