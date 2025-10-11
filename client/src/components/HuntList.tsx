@@ -7,8 +7,6 @@ import {
   Fab,
   IconButton,
   Tooltip,
-  Snackbar,
-  Alert,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -16,17 +14,14 @@ import {
   Print as PrintIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useHuntService } from '../hooks/HuntService'
 import type { Hunt } from '../types'
 
 export const HuntList = () => {
   const [hunts, setHunts] = useState<Hunt[]>([])
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarMessage, setSnackbarMessage] = useState('')
   const huntService = useHuntService()
   const navigate = useNavigate()
-  const location = useLocation()
 
   useEffect(() => {
     const setupSubscriptions = async () => {
@@ -39,12 +34,10 @@ export const HuntList = () => {
       // Map to store hunt data
       const huntData = new Map<string, Hunt>()
 
-      // Helper to update hunts state with current data, sorted by updatedAt desc
+      // Helper to update hunts state with current data
       const updateHunts = () => {
-        const sortedHunts = Array.from(huntData.values()).sort(
-          (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
-        )
-        setHunts(sortedHunts)
+        const hunts = Array.from(huntData.values())
+        setHunts(hunts)
       }
 
       // Subscribe to each known hunt individually
@@ -76,17 +69,6 @@ export const HuntList = () => {
       }
     }
   }, [huntService])
-
-  // Check for messages passed via navigation state
-  useEffect(() => {
-    const state = location.state as { message?: string } | null
-    if (state?.message) {
-      setSnackbarMessage(state.message)
-      setSnackbarOpen(true)
-      // Clear the state so message doesn't show again on refresh
-      navigate(location.pathname, { replace: true, state: {} })
-    }
-  }, [location, navigate])
 
   const handleCreateHunt = async () => {
     try {
@@ -517,22 +499,6 @@ export const HuntList = () => {
       >
         <AddIcon />
       </Fab>
-
-      {/* Notification Snackbar */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity="warning"
-          sx={{ width: '100%' }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </Box>
   )
 }

@@ -100,9 +100,7 @@ export const CluePage = () => {
               '../hooks/LocalHuntStorage'
             )
             LocalHuntStorage.removeKnownHuntId(huntId)
-            navigate('/', {
-              state: { message: 'The hunt you were viewing was deleted by another user.' }
-            })
+            navigate('/')
           }
           removeAndRedirect()
         }

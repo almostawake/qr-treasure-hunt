@@ -1,10 +1,6 @@
-import type { Timestamp } from 'firebase/firestore'
-
 export interface Hunt {
   id: string
   displayName: string
-  createdAt: Date
-  updatedAt: Date
   clueOrder: string[] // Array of clue IDs for drag-and-drop ordering
 }
 
@@ -18,12 +14,9 @@ export interface Clue {
   order: number // Backup ordering system
 }
 
-// Firestore timestamp type for better type safety
 export interface FirestoreHunt {
   id: string
   displayName: string
-  createdAt: Timestamp
-  updatedAt: Timestamp
   clueOrder: string[]
 }
 

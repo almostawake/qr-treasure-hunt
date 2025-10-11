@@ -1,4 +1,3 @@
-import { atom, useAtomValue } from 'jotai'
 import { initializeApp } from 'firebase/app'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
@@ -47,17 +46,4 @@ export const firebasePromise = initializeFirebase()
 export const getFirebaseServices = async () => {
   const { db, storage } = await firebasePromise
   return { db, storage }
-}
-
-export const loadingAtom = atom<boolean>(false)
-export const isOnlineAtom = atom<boolean>(true)
-
-export const useApplicationState = () => {
-  const loading = useAtomValue(loadingAtom)
-  const isOnline = useAtomValue(isOnlineAtom)
-
-  return {
-    loading,
-    isOnline,
-  }
 }

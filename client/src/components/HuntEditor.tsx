@@ -51,9 +51,7 @@ export const HuntEditor = () => {
               '../hooks/LocalHuntStorage'
             )
             LocalHuntStorage.removeKnownHuntId(id)
-            navigate('/', {
-              state: { message: 'The hunt you were editing was deleted by another user.' }
-            })
+            navigate('/')
           }
           removeAndRedirect()
         }

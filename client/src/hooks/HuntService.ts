@@ -9,21 +9,17 @@ import {
   query,
   orderBy,
   where,
-  Timestamp,
   getDocs,
   getDoc,
 } from 'firebase/firestore'
 import { getFirebaseServices } from './ApplicationState'
 import type { Hunt, Clue, FirestoreHunt, FirestoreClue } from '../types'
 
-// Convert Firestore timestamp to Date
 const convertFirestoreHunt = (
   doc: { id: string; data: () => FirestoreHunt }
 ): Hunt => ({
   id: doc.id,
   displayName: doc.data().displayName,
-  createdAt: doc.data().createdAt.toDate(),
-  updatedAt: doc.data().updatedAt.toDate(),
   clueOrder: doc.data().clueOrder || [],
 })
 
@@ -47,12 +43,9 @@ export class HuntService {
   // Create a new hunt
   async createHunt(displayName: string): Promise<string> {
     const { db } = await getFirebaseServices()
-    const now = Timestamp.now()
 
     const huntData: Omit<FirestoreHunt, 'id'> = {
       displayName,
-      createdAt: now,
-      updatedAt: now,
       clueOrder: [],
     }
 
@@ -72,7 +65,6 @@ export class HuntService {
 
     await updateDoc(huntRef, {
       displayName,
-      updatedAt: Timestamp.now(),
     })
   }
 
@@ -83,7 +75,6 @@ export class HuntService {
 
     await updateDoc(huntRef, {
       clueOrder,
-      updatedAt: Timestamp.now(),
     })
   }
 
@@ -137,7 +128,6 @@ export class HuntService {
 
     await updateDoc(huntRef, {
       clueOrder: [...currentOrder, docRef.id],
-      updatedAt: Timestamp.now(),
     })
 
     return docRef.id
@@ -166,7 +156,6 @@ export class HuntService {
 
     await updateDoc(huntRef, {
       clueOrder: newOrder,
-      updatedAt: Timestamp.now(),
     })
 
     // Delete the clue
@@ -178,9 +167,8 @@ export class HuntService {
     callback: (hunts: Hunt[]) => void
   ): Promise<() => void> {
     const { db } = await getFirebaseServices()
-    const q = query(collection(db, 'hunts'), orderBy('updatedAt', 'desc'))
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, 'hunts'), (snapshot) => {
       const hunts = snapshot.docs.map(convertFirestoreHunt)
       callback(hunts)
     })
@@ -219,9 +207,8 @@ export class HuntService {
     const { LocalHuntStorage } = await import('./LocalHuntStorage')
 
     const { db } = await getFirebaseServices()
-    const q = query(collection(db, 'hunts'), orderBy('updatedAt', 'desc'))
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, 'hunts'), (snapshot) => {
       const allHunts = snapshot.docs.map(convertFirestoreHunt)
       const knownHuntIds = LocalHuntStorage.getKnownHuntIds()
 

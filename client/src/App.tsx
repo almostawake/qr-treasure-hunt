@@ -3,19 +3,16 @@ import {
   Toolbar,
   Box,
   Typography,
-  CircularProgress,
   ThemeProvider,
 } from '@mui/material'
 import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { theme } from './theme'
-import { useApplicationState } from './hooks/ApplicationState'
 import { HuntList } from './components/HuntList'
 import { HuntEditor } from './components/HuntEditor'
 import { CluePage } from './components/CluePage'
 
 function App() {
-  const { loading } = useApplicationState()
 
   // Remove Firebase emulator warning in dev mode only
   useEffect(() => {
@@ -45,21 +42,6 @@ function App() {
       return () => observer.disconnect()
     }
   }, [])
-
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    )
-  }
 
   return (
     <ThemeProvider theme={theme}>
