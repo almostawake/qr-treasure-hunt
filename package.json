@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "scripts": {
     "install:all": "npm install && cd client && npm install",
-    "build:all": "cd client && npm run build",
-    "start:emulators": "firebase emulators:start --only firestore,storage --export-on-exit=emulator-data --import=emulator-data",
-    "start:client": "cd client && npm run dev",
-    "test:client": "cd client && npm run test",
-    "deploy:prod": "npm run build:all && firebase --project qr-treasure-hunt deploy"
+    "build": "cd client && npm run build",
+    "emulators": "FIRESTORE_EMULATOR_LOG_LEVEL=warn firebase emulators:start --only firestore,storage --export-on-exit=emulator-data --import=emulator-data",
+    "client": "cd client && npm run dev",
+    "deploy": "firebase login --reauth && firebase --project qr-treasure-hunt deploy"
   },
   "devDependencies": {
     "firebase-tools": "^13.0.0"

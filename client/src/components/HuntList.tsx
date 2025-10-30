@@ -7,6 +7,12 @@ import {
   Fab,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -16,10 +22,14 @@ import {
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useHuntService } from '../hooks/HuntService'
-import type { Hunt } from '../types'
+import type { Hunt, Clue } from '../types'
 
 export const HuntList = () => {
   const [hunts, setHunts] = useState<Hunt[]>([])
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [huntToDelete, setHuntToDelete] = useState<Hunt | null>(null)
+  const [hideDialogOpen, setHideDialogOpen] = useState(false)
+  const [huntToHide, setHuntToHide] = useState<Hunt | null>(null)
   const huntService = useHuntService()
   const navigate = useNavigate()
 
@@ -79,32 +89,42 @@ export const HuntList = () => {
     }
   }
 
-  const handleDeleteHunt = async (hunt: Hunt, e: React.MouseEvent) => {
+  const handleDeleteHunt = (hunt: Hunt, e: React.MouseEvent) => {
     e.stopPropagation()
+    setHuntToDelete(hunt)
+    setDeleteDialogOpen(true)
+  }
 
-    if (confirm(`Delete "${hunt.displayName}"? This cannot be undone.`)) {
-      try {
-        await huntService.deleteHunt(hunt.id)
-      } catch {
-        // Silently fail
-      }
+  const confirmDeleteHunt = async () => {
+    if (!huntToDelete) return
+
+    try {
+      await huntService.deleteHunt(huntToDelete.id)
+    } catch {
+      // Silently fail
+    } finally {
+      setDeleteDialogOpen(false)
+      setHuntToDelete(null)
     }
   }
 
-  const handleHideHunt = async (hunt: Hunt, e: React.MouseEvent) => {
+  const handleHideHunt = (hunt: Hunt, e: React.MouseEvent) => {
     e.stopPropagation()
+    setHuntToHide(hunt)
+    setHideDialogOpen(true)
+  }
 
-    if (
-      confirm(
-        `Hide "${hunt.displayName}" from your list? You can access it again by visiting a direct link.`
-      )
-    ) {
-      const { LocalHuntStorage } = await import('../hooks/LocalHuntStorage')
-      LocalHuntStorage.removeKnownHuntId(hunt.id)
+  const confirmHideHunt = async () => {
+    if (!huntToHide) return
 
-      // Trigger immediate re-render by updating the hunts list
-      setHunts((currentHunts) => currentHunts.filter((h) => h.id !== hunt.id))
-    }
+    const { LocalHuntStorage } = await import('../hooks/LocalHuntStorage')
+    LocalHuntStorage.removeKnownHuntId(huntToHide.id)
+
+    // Trigger immediate re-render by updating the hunts list
+    setHunts((currentHunts) => currentHunts.filter((h) => h.id !== huntToHide.id))
+
+    setHideDialogOpen(false)
+    setHuntToHide(null)
   }
 
   const handlePrintHunt = async (hunt: Hunt, e: React.MouseEvent) => {
@@ -526,6 +546,79 @@ export const HuntList = () => {
       >
         <AddIcon />
       </Fab>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Delete Hunt?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete{' '}
+            <strong>"{huntToDelete?.displayName || 'this hunt'}"</strong>?
+          </DialogContentText>
+          <DialogContentText sx={{ mt: 2, color: 'error.main' }}>
+            This action cannot be undone. The hunt will be deleted for everyone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            variant="outlined"
+            size="large"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDeleteHunt}
+            variant="contained"
+            color="error"
+            size="large"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Hide Confirmation Dialog */}
+      <Dialog
+        open={hideDialogOpen}
+        onClose={() => setHideDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Hide Hunt?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to hide{' '}
+            <strong>"{huntToHide?.displayName || 'this hunt'}"</strong> from
+            your list?
+          </DialogContentText>
+          <DialogContentText sx={{ mt: 2 }}>
+            This won't delete the hunt. You can access it again by visiting a
+            direct link.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button
+            onClick={() => setHideDialogOpen(false)}
+            variant="outlined"
+            size="large"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmHideHunt}
+            variant="contained"
+            size="large"
+          >
+            Hide
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

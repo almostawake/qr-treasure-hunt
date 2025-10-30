@@ -2,14 +2,13 @@
 
 `npm run install:all`
 
-`npm run start:emulators` (in one terminal)
+`npm run emulators` (in one terminal)
 
-`npm run start:client` (in another terminal)
+`npm run client` (in another terminal)
 
-To manage emulators, visit: http://127.0.0.1:4000/
-For the local app, visit: http://localhost:5173/
+Clickable links will appear in both console windows for emulators and web app.
 
-(these are both clickable links in the terminal windows above)
+Access the app from mobile phone on the same network to test QR codes.
 
 ## Set up new environment
 
@@ -20,8 +19,8 @@ For the local app, visit: http://localhost:5173/
 
 Build before deployment to ensure no compilation errors across the board.
 
-`npm run build:all`
+`npm run build`
 
-Or just deploy (which does a build first).
+Then deploy.
 
 `npm run deploy`
