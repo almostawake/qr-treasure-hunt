@@ -8,8 +8,14 @@ import {
   Toolbar,
   Fab,
   Paper,
+  Snackbar,
+  Alert,
 } from '@mui/material'
-import { ArrowBack as ArrowBackIcon, Add as AddIcon } from '@mui/icons-material'
+import {
+  ArrowBack as ArrowBackIcon,
+  Add as AddIcon,
+  Share as ShareIcon,
+} from '@mui/icons-material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useHuntService } from '../hooks/HuntService'
 import { ClueList } from './ClueList'
@@ -24,6 +30,7 @@ export const HuntEditor = () => {
   const [clues, setClues] = useState<Clue[]>([])
   const [huntName, setHuntName] = useState('')
   const [isEditing, setIsEditing] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   useEffect(() => {
     if (!id) {
@@ -140,6 +147,35 @@ export const HuntEditor = () => {
     }
   }
 
+  const handleShare = async () => {
+    if (!id) return
+
+    const huntUrl = `${window.location.origin}/hunt/${id}`
+    try {
+      await navigator.clipboard.writeText(huntUrl)
+      setSnackbarOpen(true)
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = huntUrl
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setSnackbarOpen(true)
+      } catch {
+        // Silently fail
+      }
+      document.body.removeChild(textArea)
+    }
+  }
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false)
+  }
+
   if (!hunt) {
     return (
       <Box sx={{ p: 2 }}>
@@ -211,26 +247,11 @@ export const HuntEditor = () => {
                 {hunt.displayName || 'Unnamed hunt'}
               </Typography>
             )}
-
-            {/* Clue Count Badge */}
-            <Box
-              sx={{
-                backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                color: 'text.secondary',
-                borderRadius: '50%',
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                flexShrink: 0,
-              }}
-            >
-              {clues.length}
-            </Box>
           </Box>
+
+          <IconButton edge="end" onClick={handleShare} sx={{ ml: 2 }}>
+            <ShareIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -258,8 +279,13 @@ export const HuntEditor = () => {
                 <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
                   1. Name it
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ pl: 2.5 }}>
-                  Tap "Unnamed hunt" above. Something like "Burradoo Rd treasure hunt" or "Hunt for Alex"
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ pl: 2.5 }}
+                >
+                  Tap "Unnamed hunt" above. Something like "Burradoo Rd treasure
+                  hunt" or "Hunt for Alex"
                 </Typography>
               </Box>
 
@@ -268,8 +294,14 @@ export const HuntEditor = () => {
                 <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
                   2. Add steps (locations)
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ pl: 2.5 }}>
-                  Use the + button below. You can give clues and hints to lead them to that location and even upload images/videos in case they get stuck
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ pl: 2.5 }}
+                >
+                  Use the + button below. You can give clues and hints to lead
+                  them to that location and even upload images/videos in case
+                  they get stuck
                 </Typography>
               </Box>
 
@@ -293,8 +325,13 @@ export const HuntEditor = () => {
                 <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
                   4. Preview each step
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ pl: 2.5 }}>
-                  Use 👁 to see what hunters will see to lead them to that location
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ pl: 2.5 }}
+                >
+                  Use 👁 to see what hunters will see to lead them to that
+                  location
                 </Typography>
               </Box>
 
@@ -303,8 +340,13 @@ export const HuntEditor = () => {
                 <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
                   5. Print the QR codes
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ pl: 2.5 }}>
-                  Cut them out, place them in their locations. Maybe add a prize at each location!
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ pl: 2.5 }}
+                >
+                  Cut them out, place them in their locations. Maybe add a prize
+                  at each location!
                 </Typography>
               </Box>
             </Box>
@@ -332,6 +374,25 @@ export const HuntEditor = () => {
       >
         <AddIcon />
       </Fab>
+
+      {/* Share confirmation snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity="info"
+          sx={{ width: '100%' }}
+        >
+          Hunt copied to clipboard.
+          <br />
+          <strong>WARNING:</strong> Anyone with this link can modify and delete
+          the hunt.
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

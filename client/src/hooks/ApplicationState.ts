@@ -26,7 +26,7 @@ const initializeFirebase = async () => {
   if (import.meta.env.DEV) {
     try {
       const devHost = window.location.hostname
-      connectFirestoreEmulator(db, devHost, 8080)
+      connectFirestoreEmulator(db, devHost, 8080, { merge: true })
     } catch {
       // Already connected
     }

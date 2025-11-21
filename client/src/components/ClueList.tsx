@@ -55,15 +55,9 @@ interface ClueItemProps {
   clue: Clue
   huntService: HuntService
   onDelete: (clueId: string) => void
-  sortedClues: Clue[]
 }
 
-const ClueItem = ({
-  clue,
-  huntService,
-  onDelete,
-  sortedClues,
-}: ClueItemProps) => {
+const ClueItem = ({ clue, huntService, onDelete }: ClueItemProps) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [clueText, setClueText] = useState(clue.text)
@@ -76,11 +70,11 @@ const ClueItem = ({
   const [selectedPreviewUrl, setSelectedPreviewUrl] = useState<string | null>(
     null
   )
-  const [previousMediaDisplayUrl, setPreviousMediaDisplayUrl] = useState<
-    string | null
-  >(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [showReplaceMode, setShowReplaceMode] = useState(false)
+
+  // Computed display URL: preview takes priority over Firestore-resolved URL
+  const displayUrl = selectedPreviewUrl ?? mediaDisplayUrl
 
   // Sync local state with prop updates from Firestore
   useEffect(() => {
@@ -201,16 +195,11 @@ const ClueItem = ({
   const handleFileSelect = (file: File) => {
     if (!validateAndSelectFile(file)) return
 
-    // Remember what was previously displayed so we can revert on cancel
-    if (previousMediaDisplayUrl === null) {
-      setPreviousMediaDisplayUrl(mediaDisplayUrl)
-    }
-
     // Create a local preview and defer upload until user confirms
+    // Don't touch mediaDisplayUrl - it's managed by the Firestore resolution effect
     const objectUrl = URL.createObjectURL(file)
     setSelectedFile(file)
     setSelectedPreviewUrl(objectUrl)
-    setMediaDisplayUrl(objectUrl)
     setShowReplaceMode(false) // Exit replace mode if we were in it
   }
 
@@ -249,8 +238,7 @@ const ClueItem = ({
     }
     setSelectedFile(null)
     setSelectedPreviewUrl(null)
-    setMediaDisplayUrl(previousMediaDisplayUrl)
-    setPreviousMediaDisplayUrl(null)
+    // mediaDisplayUrl is already correct from Firestore - no need to restore
     setShowReplaceMode(false)
   }
 
@@ -297,16 +285,16 @@ const ClueItem = ({
         mediaType: mediaType as 'image' | 'video',
       })
 
-      // Cleanup the object URL preview; Firestore change will refresh the display
+      // Cleanup the object URL preview
       if (selectedPreviewUrl) {
         URL.revokeObjectURL(selectedPreviewUrl)
       }
       setSelectedFile(null)
       setSelectedPreviewUrl(null)
-      setPreviousMediaDisplayUrl(null)
       setShowReplaceMode(false)
 
       // Close dialog after successful upload
+      // Firestore update will trigger the resolution effect to update mediaDisplayUrl automatically
       setMediaDialogOpen(false)
     } catch (error) {
       const errorMessage =
@@ -323,7 +311,6 @@ const ClueItem = ({
     setShowReplaceMode(false)
     setSelectedFile(null)
     setSelectedPreviewUrl(null)
-    setPreviousMediaDisplayUrl(null)
     setMediaDialogOpen(true)
   }
 
@@ -375,10 +362,6 @@ const ClueItem = ({
   const handleReplaceMedia = () => {
     // Reset to file picker mode
     setShowReplaceMode(true)
-    // Remember current display URL for cancel
-    if (previousMediaDisplayUrl === null) {
-      setPreviousMediaDisplayUrl(mediaDisplayUrl)
-    }
     // Clear any selected file
     if (selectedPreviewUrl) {
       URL.revokeObjectURL(selectedPreviewUrl)
@@ -409,24 +392,8 @@ const ClueItem = ({
             p: 2,
           }}
         >
-          {/* Row 1: Step Number Circle */}
-          <Box
-            sx={{
-              backgroundColor: 'primary.main',
-              color: 'white',
-              borderRadius: '50%',
-              width: 24,
-              height: 24,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.75rem',
-              fontWeight: 'bold',
-              flexShrink: 0,
-            }}
-          >
-            {sortedClues.findIndex((c) => c.id === clue.id) + 1}
-          </Box>
+          {/* Row 1: Empty spacer */}
+          <Box sx={{ height: 24, flexShrink: 0 }} />
 
           {/* Row 2: Drag Handle (middle row) */}
           <Box
@@ -837,7 +804,7 @@ const ClueItem = ({
             >
               {clue.mediaType === 'image' ? (
                 <img
-                  src={mediaDisplayUrl || ''}
+                  src={displayUrl || ''}
                   alt="Clue media"
                   style={{
                     maxWidth: '100%',
@@ -849,7 +816,7 @@ const ClueItem = ({
                 />
               ) : (
                 <video
-                  src={mediaDisplayUrl || ''}
+                  src={displayUrl || ''}
                   controls
                   style={{
                     maxWidth: '100%',
@@ -1032,7 +999,6 @@ export const ClueList = ({
               clue={clue}
               huntService={huntService}
               onDelete={handleDeleteClue}
-              sortedClues={sortedClues}
             />
           ))}
         </SortableContext>

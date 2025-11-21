@@ -12,6 +12,7 @@ import {
 import { QrCodeScanner as QrCodeScannerIcon } from '@mui/icons-material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useHuntService } from '../hooks/HuntService'
+import { QRScanner } from './QRScanner'
 import type { Hunt, Clue } from '../types'
 
 export const CluePage = () => {
@@ -26,6 +27,7 @@ export const CluePage = () => {
     'clue'
   )
   const [mediaDisplayUrl, setMediaDisplayUrl] = useState<string | null>(null)
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   // Resolve storage path to URL dynamically
   useEffect(() => {
@@ -59,20 +61,48 @@ export const CluePage = () => {
   }, [clue?.mediaUrl])
 
   const handleScanNext = () => {
-    // Create file input to trigger camera
-    const fileInput = document.createElement('input')
-    fileInput.type = 'file'
-    fileInput.accept = 'image/*'
-    fileInput.capture = 'environment' // Use rear camera for QR scanning
-    fileInput.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        // TODO: Process QR code from image
-        // For now, just show that we got the image
-        alert(`QR image captured: ${file.name}`)
+    setScannerOpen(true)
+  }
+
+  const handleQRScanSuccess = (decodedText: string) => {
+    // The QR code should contain a URL
+    // Extract URL from the decoded text
+    let url = decodedText.trim()
+
+    // If it's not already a full URL, try to make it one
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      // If it's a relative path, make it absolute
+      if (url.startsWith('/')) {
+        url = window.location.origin + url
+      } else {
+        // Try to parse as URL
+        try {
+          new URL(url)
+        } catch {
+          // If it's not a valid URL, assume it's a relative path
+          url = window.location.origin + '/' + url
+        }
       }
     }
-    fileInput.click()
+
+    // Navigate to the URL
+    // If it's a URL to another clue in this hunt or another hunt, navigate
+    // Otherwise, open in new tab
+    try {
+      const parsedUrl = new URL(url)
+      const currentOrigin = window.location.origin
+
+      // If it's the same origin, navigate using React Router
+      if (parsedUrl.origin === currentOrigin) {
+        navigate(parsedUrl.pathname + parsedUrl.search + parsedUrl.hash)
+      } else {
+        // Different origin, open in new tab
+        window.open(url, '_blank')
+      }
+    } catch {
+      // If URL parsing fails, try navigating as relative path
+      navigate(url)
+    }
   }
 
   useEffect(() => {
@@ -348,6 +378,13 @@ export const CluePage = () => {
           </Button>
         </Box>
       </Box>
+
+      {/* QR Scanner Dialog */}
+      <QRScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanSuccess={handleQRScanSuccess}
+      />
     </Box>
   )
 }

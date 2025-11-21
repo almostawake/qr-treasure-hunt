@@ -13,12 +13,15 @@ import {
   DialogContentText,
   DialogActions,
   Button,
+  Snackbar,
+  Alert,
 } from '@mui/material'
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Print as PrintIcon,
   VisibilityOff as VisibilityOffIcon,
+  Share as ShareIcon,
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useHuntService } from '../hooks/HuntService'
@@ -30,6 +33,7 @@ export const HuntList = () => {
   const [huntToDelete, setHuntToDelete] = useState<Hunt | null>(null)
   const [hideDialogOpen, setHideDialogOpen] = useState(false)
   const [huntToHide, setHuntToHide] = useState<Hunt | null>(null)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const huntService = useHuntService()
   const navigate = useNavigate()
 
@@ -52,16 +56,19 @@ export const HuntList = () => {
 
       // Subscribe to each known hunt individually
       for (const huntId of knownHuntIds) {
-        const unsubscribe = await huntService.subscribeToHunt(huntId, (hunt) => {
-          if (hunt) {
-            huntData.set(huntId, hunt)
-          } else {
-            // Hunt was deleted - remove from local storage and data
-            huntData.delete(huntId)
-            LocalHuntStorage.removeKnownHuntId(huntId)
+        const unsubscribe = await huntService.subscribeToHunt(
+          huntId,
+          (hunt) => {
+            if (hunt) {
+              huntData.set(huntId, hunt)
+            } else {
+              // Hunt was deleted - remove from local storage and data
+              huntData.delete(huntId)
+              LocalHuntStorage.removeKnownHuntId(huntId)
+            }
+            updateHunts()
           }
-          updateHunts()
-        })
+        )
         unsubscribes.set(huntId, unsubscribe)
       }
 
@@ -121,7 +128,9 @@ export const HuntList = () => {
     LocalHuntStorage.removeKnownHuntId(huntToHide.id)
 
     // Trigger immediate re-render by updating the hunts list
-    setHunts((currentHunts) => currentHunts.filter((h) => h.id !== huntToHide.id))
+    setHunts((currentHunts) =>
+      currentHunts.filter((h) => h.id !== huntToHide.id)
+    )
 
     setHideDialogOpen(false)
     setHuntToHide(null)
@@ -386,6 +395,35 @@ export const HuntList = () => {
     printWindow.document.close()
   }
 
+  const handleShare = async (hunt: Hunt, e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    const huntUrl = `${window.location.origin}/hunt/${hunt.id}`
+    try {
+      await navigator.clipboard.writeText(huntUrl)
+      setSnackbarOpen(true)
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = huntUrl
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setSnackbarOpen(true)
+      } catch {
+        // Silently fail
+      }
+      document.body.removeChild(textArea)
+    }
+  }
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false)
+  }
+
   return (
     <Box sx={{ p: { xs: 2, sm: 3 }, pb: 10 }}>
       {hunts.length === 0 ? (
@@ -484,6 +522,26 @@ export const HuntList = () => {
                       }}
                     >
                       <PrintIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip
+                    title="Copy hunt link"
+                    enterDelay={1000}
+                    enterTouchDelay={0}
+                    leaveTouchDelay={3000}
+                  >
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleShare(hunt, e)}
+                      sx={{
+                        color: 'text.secondary',
+                        '&:hover': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                        },
+                      }}
+                    >
+                      <ShareIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
 
@@ -610,15 +668,30 @@ export const HuntList = () => {
           >
             Cancel
           </Button>
-          <Button
-            onClick={confirmHideHunt}
-            variant="contained"
-            size="large"
-          >
+          <Button onClick={confirmHideHunt} variant="contained" size="large">
             Hide
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Share confirmation snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity="info"
+          sx={{ width: '100%' }}
+        >
+          Hunt copied to clipboard.
+          <br />
+          <strong>WARNING:</strong> Anyone with this link can modify and delete
+          the hunt.
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
