@@ -59,20 +59,7 @@ export const CluePage = () => {
   }, [clue?.mediaUrl])
 
   const handleScanNext = () => {
-    // Create file input to trigger camera
-    const fileInput = document.createElement('input')
-    fileInput.type = 'file'
-    fileInput.accept = 'image/*'
-    fileInput.capture = 'environment' // Use rear camera for QR scanning
-    fileInput.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        // TODO: Process QR code from image
-        // For now, just show that we got the image
-        alert(`QR image captured: ${file.name}`)
-      }
-    }
-    fileInput.click()
+    navigate('/scan')
   }
 
   useEffect(() => {
@@ -326,23 +313,11 @@ export const CluePage = () => {
         </Paper>
 
         {/* Scan Next QR Code Button */}
-        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
           <Button
             variant="contained"
-            size="large"
             startIcon={<QrCodeScannerIcon />}
             onClick={handleScanNext}
-            sx={{
-              py: 2,
-              px: 4,
-              fontSize: '1.1rem',
-              borderRadius: 3,
-              boxShadow: 3,
-              '&:hover': {
-                boxShadow: 6,
-                transform: 'translateY(-1px)',
-              },
-            }}
           >
             Scan Next QR Code
           </Button>

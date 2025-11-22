@@ -11,6 +11,7 @@ import { theme } from './theme'
 import { HuntList } from './components/HuntList'
 import { HuntEditor } from './components/HuntEditor'
 import { CluePage } from './components/CluePage'
+import { QRScanner } from './components/QRScanner'
 
 function App() {
 
@@ -79,6 +80,7 @@ function App() {
             />
             <Route path="/hunt/:id" element={<HuntEditor />} />
             <Route path="/hunt/:huntId/clue/:clueId" element={<CluePage />} />
+            <Route path="/scan" element={<QRScanner />} />
           </Routes>
         </Box>
       </Router>
