@@ -249,13 +249,20 @@ const ClueItem = ({
     }
     setSelectedFile(null)
     setSelectedPreviewUrl(null)
-    setMediaDisplayUrl(previousMediaDisplayUrl)
-    setPreviousMediaDisplayUrl(null)
+    // Only restore mediaDisplayUrl if we actually saved a previous value
+    // (i.e., only if the user selected a file that changed the display)
+    if (previousMediaDisplayUrl !== null) {
+      setMediaDisplayUrl(previousMediaDisplayUrl)
+      setPreviousMediaDisplayUrl(null)
+    }
     setShowReplaceMode(false)
   }
 
   const handleDialogClose = () => {
-    cancelSelectedFile()
+    // Only cancel file selection if there's actually a file selected
+    if (selectedFile) {
+      cancelSelectedFile()
+    }
     setMediaDialogOpen(false)
   }
 
@@ -323,7 +330,7 @@ const ClueItem = ({
     setShowReplaceMode(false)
     setSelectedFile(null)
     setSelectedPreviewUrl(null)
-    setPreviousMediaDisplayUrl(null)
+    // Don't reset previousMediaDisplayUrl - it should only be set when selecting a new file
     setMediaDialogOpen(true)
   }
 
@@ -835,29 +842,35 @@ const ClueItem = ({
                 transition: 'all 0.2s ease',
               }}
             >
-              {clue.mediaType === 'image' ? (
-                <img
-                  src={mediaDisplayUrl || ''}
-                  alt="Clue media"
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    objectFit: 'contain',
-                    borderRadius: 8,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  }}
-                />
+              {mediaDisplayUrl ? (
+                clue.mediaType === 'image' ? (
+                  <img
+                    src={mediaDisplayUrl}
+                    alt="Clue media"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'contain',
+                      borderRadius: 8,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    }}
+                  />
+                ) : (
+                  <video
+                    src={mediaDisplayUrl}
+                    controls
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      borderRadius: 8,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    }}
+                  />
+                )
               ) : (
-                <video
-                  src={mediaDisplayUrl || ''}
-                  controls
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    borderRadius: 8,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  }}
-                />
+                <Typography color="text.secondary">
+                  Loading media...
+                </Typography>
               )}
             </Box>
           )}
