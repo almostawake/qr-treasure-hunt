@@ -1,5 +1,5 @@
 {
-  "name": "template-min",
+  "name": "qr-hunt",
   "version": "1.0.0",
   "scripts": {
     "install:all": "npm install && cd client && npm install",
