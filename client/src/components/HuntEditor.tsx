@@ -211,25 +211,6 @@ export const HuntEditor = () => {
                 {hunt.displayName || 'Unnamed hunt'}
               </Typography>
             )}
-
-            {/* Clue Count Badge */}
-            <Box
-              sx={{
-                backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                color: 'text.secondary',
-                borderRadius: '50%',
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                flexShrink: 0,
-              }}
-            >
-              {clues.length}
-            </Box>
           </Box>
         </Toolbar>
       </AppBar>

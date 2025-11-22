@@ -18,7 +18,6 @@ import {
   useTheme,
 } from '@mui/material'
 import {
-  DragIndicator as DragIcon,
   Visibility as VisibilityIcon,
   AddPhotoAlternate as AddPhotoAlternateIcon,
   Photo as PhotoIcon,
@@ -81,6 +80,8 @@ const ClueItem = ({
   >(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [showReplaceMode, setShowReplaceMode] = useState(false)
+  const [clueFieldFocused, setClueFieldFocused] = useState(false)
+  const [hintFieldFocused, setHintFieldFocused] = useState(false)
 
   // Sync local state with prop updates from Firestore
   useEffect(() => {
@@ -405,63 +406,123 @@ const ClueItem = ({
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'stretch', minHeight: 0 }}>
-        {/* Left Column - Controls (3 equal rows) */}
+        {/* Left Column - Action buttons */}
         <Box
+          {...attributes}
+          {...listeners}
           sx={{
             width: 64,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            p: 2,
+            justifyContent: 'space-evenly',
+            gap: 1,
+            py: 2,
+            cursor: 'grab',
+            touchAction: 'none',
+            userSelect: 'none',
+            '&:active': {
+              cursor: 'grabbing',
+            },
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.02)',
+            },
           }}
         >
-          {/* Row 1: Step Number Circle */}
-          <Box
-            sx={{
-              backgroundColor: 'primary.main',
-              color: 'white',
-              borderRadius: '50%',
-              width: 24,
-              height: 24,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.75rem',
-              fontWeight: 'bold',
-              flexShrink: 0,
-            }}
+          {/* Visual Hint */}
+          <Tooltip
+            title="Manage visual hints (photos, videos)"
+            enterDelay={1000}
+            enterTouchDelay={0}
+            leaveTouchDelay={3000}
           >
-            {sortedClues.findIndex((c) => c.id === clue.id) + 1}
-          </Box>
+            <Badge
+              variant="dot"
+              color="success"
+              invisible={!(clue.mediaUrl && clue.mediaUrl.trim() !== '')}
+              sx={{
+                '& .MuiBadge-dot': {
+                  right: 2,
+                  top: 2,
+                },
+              }}
+            >
+              <IconButton
+                size="small"
+                disabled={uploading || deleting}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleMediaClick(e)
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                sx={{
+                  color:
+                    clue.mediaUrl && clue.mediaUrl.trim() !== ''
+                      ? 'primary.main'
+                      : 'text.secondary',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  },
+                }}
+              >
+                {clue.mediaUrl && clue.mediaUrl.trim() !== '' ? (
+                  <PhotoIcon fontSize="small" />
+                ) : (
+                  <AddPhotoAlternateIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Badge>
+          </Tooltip>
 
-          {/* Row 2: Drag Handle (middle row) */}
-          <Box
-            {...attributes}
-            {...listeners}
-            sx={{
-              cursor: 'grab',
-              color: 'text.secondary',
-              touchAction: 'none',
-              userSelect: 'none',
-              p: 1,
-              borderRadius: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              '&:active': {
-                cursor: 'grabbing',
-              },
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              },
-            }}
+          {/* Preview */}
+          <Tooltip
+            title="Simulate playing this step in the hunt"
+            enterDelay={1000}
+            enterTouchDelay={0}
+            leaveTouchDelay={3000}
           >
-            <DragIcon />
-          </Box>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation()
+                window.open(`/hunt/${clue.huntId}/clue/${clue.id}`, '_blank')
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                },
+              }}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
 
-          {/* Row 3: Empty spacer for equal distribution */}
-          <Box sx={{ height: 24, flexShrink: 0 }} />
+          {/* Delete */}
+          <Tooltip
+            title="Delete this step"
+            enterDelay={1000}
+            enterTouchDelay={0}
+            leaveTouchDelay={3000}
+          >
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDelete()
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                },
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
 
         {/* Content Column */}
@@ -472,13 +533,26 @@ const ClueItem = ({
             variant="filled"
             value={clueText}
             onChange={(e) => setClueText(e.target.value)}
-            onBlur={handleClueBlur}
+            onFocus={() => setClueFieldFocused(true)}
+            onBlur={() => {
+              setClueFieldFocused(false)
+              handleClueBlur()
+            }}
             onKeyPress={(e) => e.key === 'Enter' && handleClueBlur()}
             onPointerDown={(e) => e.stopPropagation()}
-            multiline
-            minRows={2}
+            multiline={clueFieldFocused}
+            rows={clueFieldFocused ? undefined : 1}
             placeholder="A cryptic clue to find this step/location"
-            sx={{ mb: 2 }}
+            sx={{
+              mb: 2,
+              '& .MuiInputBase-input': clueFieldFocused
+                ? {}
+                : {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  },
+            }}
           />
 
           <TextField
@@ -487,162 +561,26 @@ const ClueItem = ({
             variant="filled"
             value={hintText}
             onChange={(e) => setHintText(e.target.value)}
-            onBlur={handleHintBlur}
+            onFocus={() => setHintFieldFocused(true)}
+            onBlur={() => {
+              setHintFieldFocused(false)
+              handleHintBlur()
+            }}
             onKeyPress={(e) => e.key === 'Enter' && handleHintBlur()}
             onPointerDown={(e) => e.stopPropagation()}
-            multiline
-            minRows={1}
+            multiline={hintFieldFocused}
+            rows={hintFieldFocused ? undefined : 1}
             placeholder="Optional extra help if the hunter is stuck"
-          />
-
-          {/* Action Icons - Centered */}
-          <Box
             sx={{
-              mt: 2,
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'center',
-              gap: 3,
+              '& .MuiInputBase-input': hintFieldFocused
+                ? {}
+                : {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  },
             }}
-          >
-            {/* Preview Icon */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              <Tooltip
-                title="Simulate playing this step in the hunt"
-                enterDelay={1000}
-                enterTouchDelay={0}
-                leaveTouchDelay={3000}
-              >
-                <IconButton
-                  size="small"
-                  sx={{
-                    color: 'text.secondary',
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                    },
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    window.open(
-                      `/hunt/${clue.huntId}/clue/${clue.id}`,
-                      '_blank'
-                    )
-                  }}
-                >
-                  <VisibilityIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ fontSize: '0.65rem' }}
-              >
-                Preview
-              </Typography>
-            </Box>
-
-            {/* Visual Hint Upload/Management */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              <Tooltip
-                title="Manage visual hints (photos, videos)"
-                enterDelay={1000}
-                enterTouchDelay={0}
-                leaveTouchDelay={3000}
-              >
-                <Badge
-                  variant="dot"
-                  color="success"
-                  invisible={!(clue.mediaUrl && clue.mediaUrl.trim() !== '')}
-                  sx={{
-                    '& .MuiBadge-dot': {
-                      right: 2,
-                      top: 2,
-                    },
-                  }}
-                >
-                  <IconButton
-                    size="small"
-                    disabled={uploading || deleting}
-                    onClick={handleMediaClick}
-                    sx={{
-                      color:
-                        clue.mediaUrl && clue.mediaUrl.trim() !== ''
-                          ? 'primary.main'
-                          : 'text.secondary',
-                      '&:hover': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                      },
-                    }}
-                  >
-                    {clue.mediaUrl && clue.mediaUrl.trim() !== '' ? (
-                      <PhotoIcon fontSize="small" />
-                    ) : (
-                      <AddPhotoAlternateIcon fontSize="small" />
-                    )}
-                  </IconButton>
-                </Badge>
-              </Tooltip>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ fontSize: '0.65rem' }}
-              >
-                Visual hint
-              </Typography>
-            </Box>
-
-            {/* Delete Icon */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              <Tooltip
-                title="Delete this step"
-                enterDelay={1000}
-                enterTouchDelay={0}
-                leaveTouchDelay={3000}
-              >
-                <IconButton
-                  size="small"
-                  onClick={handleDelete}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  sx={{
-                    color: 'text.secondary',
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                    },
-                  }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ fontSize: '0.65rem' }}
-              >
-                Delete
-              </Typography>
-            </Box>
-          </Box>
+          />
 
           {uploading && (
             <Box sx={{ mt: 1, textAlign: 'center' }}>
