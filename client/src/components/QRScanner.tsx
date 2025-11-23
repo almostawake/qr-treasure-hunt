@@ -27,9 +27,10 @@ export const QRScanner = () => {
     }
   }
 
-  const handleError = (err: Error) => {
-    console.error('QR Scanner error:', err)
-    setError(`Camera error: ${err.message}`)
+  const handleError = (error: unknown) => {
+    console.error('QR Scanner error:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    setError(`Camera error: ${message}`)
   }
 
   return (

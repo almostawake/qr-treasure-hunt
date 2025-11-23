@@ -54,14 +54,12 @@ interface ClueItemProps {
   clue: Clue
   huntService: HuntService
   onDelete: (clueId: string) => void
-  sortedClues: Clue[]
 }
 
 const ClueItem = ({
   clue,
   huntService,
   onDelete,
-  sortedClues,
 }: ClueItemProps) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -983,7 +981,6 @@ export const ClueList = ({
               clue={clue}
               huntService={huntService}
               onDelete={handleDeleteClue}
-              sortedClues={sortedClues}
             />
           ))}
         </SortableContext>
