@@ -224,22 +224,20 @@ export const HuntList = () => {
             }
             
             .qr-grid {
-              display: flex;
-              flex-wrap: wrap;
-              justify-content: flex-start;
-              gap: 8mm;
-              align-items: flex-start;
+              display: grid;
+              grid-template-columns: repeat(4, 39mm);
+              column-gap: 8mm;
+              row-gap: 12mm;
+              justify-content: center;
+              grid-auto-flow: row;
             }
 
             .qr-item {
-              width: 42mm;
+              width: 39mm;
               text-align: center;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
-              orphans: 1;
-              widows: 1;
-              margin-bottom: 12mm;
-              flex: 0 0 42mm;
+              justify-self: start;
             }
             
             .qr-content {
@@ -255,7 +253,7 @@ export const HuntList = () => {
               line-height: 1.2;
               word-wrap: break-word;
               hyphens: auto;
-              max-width: 42mm;
+              max-width: 39mm;
             }
 
             .hint-text {
@@ -266,7 +264,7 @@ export const HuntList = () => {
               word-wrap: break-word;
               font-style: italic;
               hyphens: auto;
-              max-width: 42mm;
+              max-width: 39mm;
             }
             
             .qr-overlay {
