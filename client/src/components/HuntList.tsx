@@ -287,42 +287,9 @@ export const HuntList = () => {
               color: black;
             }
 
-            .print-button {
-              position: fixed;
-              top: 20px;
-              right: 20px;
-              padding: 8px 16px;
-              background: #424242;
-              color: white;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 14px;
-              font-weight: 500;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            }
-
-            .print-button:hover {
-              background: #212121;
-            }
-
-            @media print {
-              .print-button {
-                display: none;
-              }
-            }
           </style>
         </head>
         <body>
-          <button class="print-button" onclick="window.print()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
-            </svg>
-            Print
-          </button>
-          
           <div class="hunt-title">${hunt.displayName}</div>
           <div class="qr-grid" id="qr-grid">
             ${qrCodes
@@ -346,6 +313,11 @@ export const HuntList = () => {
           </div>
           
           <script>
+            // Close window after print dialog is dismissed
+            window.onafterprint = function() {
+              window.close();
+            };
+
             window.onload = function() {
               // Wait for all QR code images to load before printing
               const images = document.querySelectorAll('img');
