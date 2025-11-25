@@ -399,39 +399,18 @@ export const HuntList = () => {
               onClick={() => navigate(`/hunt/${hunt.id}`)}
             >
               <CardContent>
-                {/* Header Row */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      flexGrow: 1,
-                      fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                      fontWeight: 500,
-                      lineHeight: 1.3,
-                      color: hunt.displayName ? 'inherit' : 'text.secondary',
-                    }}
-                  >
-                    {hunt.displayName || 'Unnamed hunt'}
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      color: 'text.secondary',
-                      borderRadius: '50%',
-                      width: 32,
-                      height: 32,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {hunt.clueOrder.length}
-                  </Box>
-                </Box>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                    fontWeight: 500,
+                    lineHeight: 1.3,
+                    color: hunt.displayName ? 'inherit' : 'text.secondary',
+                    mb: 2,
+                  }}
+                >
+                  {hunt.displayName || 'Unnamed hunt'}
+                </Typography>
 
                 {/* Bottom Row - Action Icons */}
                 <Box
