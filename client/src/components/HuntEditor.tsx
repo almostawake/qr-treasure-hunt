@@ -501,7 +501,7 @@ export const HuntEditor = () => {
                 </Typography>
                 <Box sx={{ pl: 2.5 }}>
                   <Typography variant="body2" color="text.secondary">
-                    • Drag ⋮⋮ to reorder steps
+                    • Drag to reorder steps
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     • Hover over or long press icons to see what they do
