@@ -7,7 +7,6 @@ import {
   deleteDoc,
   onSnapshot,
   query,
-  orderBy,
   where,
   getDocs,
   getDoc,
@@ -270,8 +269,7 @@ export class HuntService {
     const { db } = await getFirebaseServices()
     const q = query(
       collection(db, 'clues'),
-      where('huntId', '==', huntId),
-      orderBy('order', 'asc')
+      where('huntId', '==', huntId)
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
