@@ -6,7 +6,7 @@
     "build": "cd client && npm run build",
     "emulators": "FIRESTORE_EMULATOR_LOG_LEVEL=warn firebase emulators:start --only firestore,storage --export-on-exit=emulator-data --import=emulator-data",
     "client": "cd client && npm run dev",
-    "reauth": "firebase loggout && firebase login",
+    "reauth": "firebase logout && firebase login",
     "deploy": "firebase --project qr-treasure-hunt deploy"
   },
   "devDependencies": {

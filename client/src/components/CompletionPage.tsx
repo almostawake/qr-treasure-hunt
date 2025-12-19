@@ -18,6 +18,13 @@ export const CompletionPage = () => {
       return
     }
 
+    // Add this hunt to known hunts when accessed via QR/link
+    const addToKnownHunts = async () => {
+      const { LocalHuntStorage } = await import('../hooks/LocalHuntStorage')
+      LocalHuntStorage.addKnownHuntId(huntId)
+    }
+    addToKnownHunts()
+
     const setupSubscription = async () => {
       const unsubscribe = await huntService.subscribeToHunt(huntId, (hunt) => {
         if (hunt) {

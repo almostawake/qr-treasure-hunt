@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Box,
   Card,
@@ -33,52 +33,7 @@ export const HuntList = () => {
   const huntService = useHuntService()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const setupSubscriptions = async () => {
-      const { LocalHuntStorage } = await import('../hooks/LocalHuntStorage')
-      const knownHuntIds = LocalHuntStorage.getKnownHuntIds()
-
-      // Map to store unsubscribe functions for each hunt
-      const unsubscribes = new Map<string, () => void>()
-
-      // Map to store hunt data
-      const huntData = new Map<string, Hunt>()
-
-      // Helper to update hunts state with current data
-      const updateHunts = () => {
-        const hunts = Array.from(huntData.values())
-        setHunts(hunts)
-      }
-
-      // Subscribe to each known hunt individually
-      for (const huntId of knownHuntIds) {
-        const unsubscribe = await huntService.subscribeToHunt(huntId, (hunt) => {
-          if (hunt) {
-            huntData.set(huntId, hunt)
-          } else {
-            // Hunt was deleted - remove from local storage and data
-            huntData.delete(huntId)
-            LocalHuntStorage.removeKnownHuntId(huntId)
-          }
-          updateHunts()
-        })
-        unsubscribes.set(huntId, unsubscribe)
-      }
-
-      return unsubscribes
-    }
-
-    let unsubscribes: Map<string, () => void> | undefined
-    setupSubscriptions().then((unsubs) => {
-      unsubscribes = unsubs
-    })
-
-    return () => {
-      if (unsubscribes) {
-        unsubscribes.forEach((unsubscribe) => unsubscribe())
-      }
-    }
-  }, [huntService])
+  // TODO: Load hunts data
 
   const handleCreateHunt = async () => {
     try {
