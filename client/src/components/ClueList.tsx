@@ -543,9 +543,9 @@ const ClueItem = ({
               handleClueBlur()
             }}
             onKeyPress={(e) => e.key === 'Enter' && handleClueBlur()}
-            onPointerDown={(e) => e.stopPropagation()}
-            multiline={clueFieldFocused}
-            rows={clueFieldFocused ? undefined : 1}
+            multiline
+            minRows={1}
+            maxRows={clueFieldFocused ? 6 : 1}
             placeholder="A cryptic clue to find this step/location"
             sx={{
               mb: 2,
@@ -571,9 +571,9 @@ const ClueItem = ({
               handleHintBlur()
             }}
             onKeyPress={(e) => e.key === 'Enter' && handleHintBlur()}
-            onPointerDown={(e) => e.stopPropagation()}
-            multiline={hintFieldFocused}
-            rows={hintFieldFocused ? undefined : 1}
+            multiline
+            minRows={1}
+            maxRows={hintFieldFocused ? 6 : 1}
             placeholder="Optional extra help if the hunter is stuck"
             sx={{
               '& .MuiInputBase-input': hintFieldFocused
@@ -923,6 +923,7 @@ export const ClueList = ({
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {

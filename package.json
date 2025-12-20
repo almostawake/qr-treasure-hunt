@@ -7,7 +7,8 @@
     "emulators": "FIRESTORE_EMULATOR_LOG_LEVEL=warn firebase emulators:start --only firestore,storage --export-on-exit=emulator-data --import=emulator-data",
     "clien'[]]]jut": "cd client && npm run dev",
     "reauth": "firebase logout && firebase login",
-    "deploy": "firebase --project qr-treasure-hunt deploy"
+    "deploy": "firebase --project qr-treasure-hunt deploy",
+    "deploy:quick": "firebase --project qr-treasure-hunt deploy --only hosting"
   },
   "devDependencies": {
     "firebase-tools": "^13.0.0"
