@@ -6,17 +6,13 @@ import {
   updateDoc,
   deleteDoc,
   onSnapshot,
-  query,
-  where,
-  getDocs,
   getDoc,
   QueryDocumentSnapshot,
   DocumentSnapshot,
-  deleteField,
   type DocumentData,
 } from 'firebase/firestore'
 import { getFirebaseServices } from './ApplicationState'
-import type { Hunt, Clue, FirestoreHunt, FirestoreClue } from '../types'
+import type { Hunt, Clue, FirestoreHunt } from '../types'
 
 const convertFirestoreHunt = (
   doc: QueryDocumentSnapshot<DocumentData>
@@ -24,34 +20,20 @@ const convertFirestoreHunt = (
   const data = doc.data() as FirestoreHunt
   return {
     id: doc.id,
-    displayName: data.displayName,
-    clueOrder: data.clueOrder || [],
+    displayName: data.displayName || '',
+    clues: data.clues || [],
   }
 }
 
 const convertDocumentSnapshotToHunt = (
   doc: DocumentSnapshot<DocumentData>
-): Hunt => {
+): Hunt | null => {
+  if (!doc.exists()) return null
   const data = doc.data() as FirestoreHunt
   return {
     id: doc.id,
-    displayName: data.displayName,
-    clueOrder: data.clueOrder || [],
-  }
-}
-
-const convertFirestoreClue = (
-  doc: QueryDocumentSnapshot<DocumentData>
-): Clue => {
-  const data = doc.data() as FirestoreClue
-  return {
-    id: doc.id,
-    huntId: data.huntId,
-    text: data.text,
-    hint: data.hint,
-    mediaUrl: data.mediaUrl,
-    mediaType: data.mediaType,
-    order: data.order,
+    displayName: data.displayName || '',
+    clues: data.clues || [],
   }
 }
 
@@ -64,9 +46,9 @@ export class HuntService {
   async createHunt(displayName: string): Promise<string> {
     const { db } = await getFirebaseServices()
 
-    const huntData: Omit<FirestoreHunt, 'id'> = {
+    const huntData: FirestoreHunt = {
       displayName,
-      clueOrder: [],
+      clues: [],
     }
 
     const docRef = await addDoc(collection(db, 'hunts'), huntData)
@@ -88,126 +70,138 @@ export class HuntService {
     })
   }
 
-  // Update clue order after drag and drop
-  async updateClueOrder(huntId: string, clueOrder: string[]): Promise<void> {
-    const { db } = await getFirebaseServices()
-    const huntRef = doc(db, 'hunts', huntId)
-
-    await updateDoc(huntRef, {
-      clueOrder,
-    })
-  }
-
-  // Delete a hunt and all its clues
+  // Delete a hunt
   async deleteHunt(huntId: string): Promise<void> {
     const { db } = await getFirebaseServices()
-
-    // Delete all clues first
-    const cluesQuery = query(
-      collection(db, 'clues'),
-      where('huntId', '==', huntId)
-    )
-    const cluesSnapshot = await getDocs(cluesQuery)
-
-    const deletePromises = cluesSnapshot.docs.map((doc) => deleteDoc(doc.ref))
-    await Promise.all(deletePromises)
-
-    // Then delete the hunt
     await deleteDoc(doc(db, 'hunts', huntId))
   }
 
-  // Create a new clue
+  // Create a new clue in a hunt
   async createClue(
     huntId: string,
     text: string = '',
     hint: string = ''
   ): Promise<string> {
     const { db } = await getFirebaseServices()
+    const huntRef = doc(db, 'hunts', huntId)
 
-    // Get current clue count to set order
-    const cluesQuery = query(
-      collection(db, 'clues'),
-      where('huntId', '==', huntId)
-    )
-    const cluesSnapshot = await getDocs(cluesQuery)
-    const order = cluesSnapshot.size
+    // Get current hunt
+    const huntDoc = await getDoc(huntRef)
+    if (!huntDoc.exists()) throw new Error('Hunt not found')
 
-    const clueData: Omit<FirestoreClue, 'id'> = {
-      huntId,
+    const hunt = convertDocumentSnapshotToHunt(huntDoc)
+    if (!hunt) throw new Error('Hunt not found')
+
+    // Generate new clue ID
+    const clueId = crypto.randomUUID()
+
+    // Create new clue
+    const newClue: Clue = {
+      id: clueId,
       text,
       hint,
-      order,
+      order: hunt.clues.length,
     }
 
-    const docRef = await addDoc(collection(db, 'clues'), clueData)
-
-    // Add to hunt's clueOrder
-    const huntRef = doc(db, 'hunts', huntId)
-    const huntDoc = await getDoc(huntRef)
-    const currentOrder = huntDoc.data()?.clueOrder || []
+    // Add to clues array
+    const updatedClues = [...hunt.clues, newClue]
 
     await updateDoc(huntRef, {
-      clueOrder: [...currentOrder, docRef.id],
+      clues: updatedClues,
     })
 
-    return docRef.id
+    return clueId
   }
 
-  // Update clue text or hint
+  // Update a clue
   async updateClue(
+    huntId: string,
     clueId: string,
     updates: Partial<Pick<Clue, 'text' | 'hint' | 'mediaUrl' | 'mediaType'>>
   ): Promise<void> {
     const { db } = await getFirebaseServices()
-    const clueRef = doc(db, 'clues', clueId)
+    const huntRef = doc(db, 'hunts', huntId)
 
-    await updateDoc(clueRef, updates)
+    // Get current hunt
+    const huntDoc = await getDoc(huntRef)
+    if (!huntDoc.exists()) throw new Error('Hunt not found')
+
+    const hunt = convertDocumentSnapshotToHunt(huntDoc)
+    if (!hunt) throw new Error('Hunt not found')
+
+    // Find and update the clue
+    const updatedClues = hunt.clues.map((clue) =>
+      clue.id === clueId ? { ...clue, ...updates } : clue
+    )
+
+    await updateDoc(huntRef, {
+      clues: updatedClues,
+    })
   }
 
   // Delete media from a clue
-  async deleteClueMedia(clueId: string): Promise<void> {
+  async deleteClueMedia(huntId: string, clueId: string): Promise<void> {
     const { db } = await getFirebaseServices()
-    const clueRef = doc(db, 'clues', clueId)
+    const huntRef = doc(db, 'hunts', huntId)
 
-    await updateDoc(clueRef, {
-      mediaUrl: deleteField(),
-      mediaType: deleteField(),
+    // Get current hunt
+    const huntDoc = await getDoc(huntRef)
+    if (!huntDoc.exists()) throw new Error('Hunt not found')
+
+    const hunt = convertDocumentSnapshotToHunt(huntDoc)
+    if (!hunt) throw new Error('Hunt not found')
+
+    // Find and update the clue to remove media
+    const updatedClues = hunt.clues.map((clue) => {
+      if (clue.id === clueId) {
+        const { mediaUrl, mediaType, ...rest } = clue
+        return rest
+      }
+      return clue
+    })
+
+    await updateDoc(huntRef, {
+      clues: updatedClues,
     })
   }
 
   // Delete a clue
   async deleteClue(huntId: string, clueId: string): Promise<void> {
     const { db } = await getFirebaseServices()
-
-    // Remove from hunt's clueOrder
     const huntRef = doc(db, 'hunts', huntId)
+
+    // Get current hunt
     const huntDoc = await getDoc(huntRef)
-    const currentOrder = huntDoc.data()?.clueOrder || []
-    const newOrder = currentOrder.filter((id: string) => id !== clueId)
+    if (!huntDoc.exists()) throw new Error('Hunt not found')
+
+    const hunt = convertDocumentSnapshotToHunt(huntDoc)
+    if (!hunt) throw new Error('Hunt not found')
+
+    // Remove the clue
+    const updatedClues = hunt.clues.filter((clue) => clue.id !== clueId)
 
     await updateDoc(huntRef, {
-      clueOrder: newOrder,
+      clues: updatedClues,
     })
-
-    // Delete the clue
-    await deleteDoc(doc(db, 'clues', clueId))
   }
 
-  // Subscribe to all hunts
-  async subscribeToHunts(
-    callback: (hunts: Hunt[]) => void
-  ): Promise<() => void> {
+  // Update clue order (for drag and drop)
+  async updateClueOrder(huntId: string, clues: Clue[]): Promise<void> {
     const { db } = await getFirebaseServices()
+    const huntRef = doc(db, 'hunts', huntId)
 
-    const unsubscribe = onSnapshot(collection(db, 'hunts'), (snapshot) => {
-      const hunts = snapshot.docs.map(convertFirestoreHunt)
-      callback(hunts)
+    // Update order field to match array index
+    const orderedClues = clues.map((clue, index) => ({
+      ...clue,
+      order: index,
+    }))
+
+    await updateDoc(huntRef, {
+      clues: orderedClues,
     })
-
-    return unsubscribe
   }
 
-  // Subscribe to a single hunt document
+  // Subscribe to a single hunt document with real-time updates
   async subscribeToHunt(
     huntId: string,
     callback: (hunt: Hunt | null) => void
@@ -216,13 +210,22 @@ export class HuntService {
     const huntRef = doc(db, 'hunts', huntId)
 
     const unsubscribe = onSnapshot(huntRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const hunt = convertDocumentSnapshotToHunt(snapshot)
-        callback(hunt)
-      } else {
-        // Hunt doesn't exist (was deleted)
-        callback(null)
-      }
+      const hunt = convertDocumentSnapshotToHunt(snapshot)
+      callback(hunt)
+    })
+
+    return unsubscribe
+  }
+
+  // Subscribe to all hunts (not recommended for production, but useful for admin)
+  async subscribeToAllHunts(
+    callback: (hunts: Hunt[]) => void
+  ): Promise<() => void> {
+    const { db } = await getFirebaseServices()
+
+    const unsubscribe = onSnapshot(collection(db, 'hunts'), (snapshot) => {
+      const hunts = snapshot.docs.map(convertFirestoreHunt)
+      callback(hunts)
     })
 
     return unsubscribe
@@ -261,23 +264,13 @@ export class HuntService {
     return unsubscribe
   }
 
-  // Subscribe to clues for a specific hunt
-  async subscribeToClues(
-    huntId: string,
-    callback: (clues: Clue[]) => void
-  ): Promise<() => void> {
+  // Get a single hunt (one-time read, uses cache)
+  async getHunt(huntId: string): Promise<Hunt | null> {
     const { db } = await getFirebaseServices()
-    const q = query(
-      collection(db, 'clues'),
-      where('huntId', '==', huntId)
-    )
+    const huntRef = doc(db, 'hunts', huntId)
+    const huntDoc = await getDoc(huntRef)
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const clues = snapshot.docs.map(convertFirestoreClue)
-      callback(clues)
-    })
-
-    return unsubscribe
+    return convertDocumentSnapshotToHunt(huntDoc)
   }
 }
 

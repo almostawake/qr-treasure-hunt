@@ -52,12 +52,16 @@ import type { HuntService } from '../hooks/HuntService'
 
 interface ClueItemProps {
   clue: Clue
+  clueNumber: number
+  huntId: string
   huntService: HuntService
   onDelete: (clueId: string) => void
 }
 
 const ClueItem = ({
   clue,
+  clueNumber,
+  huntId,
   huntService,
   onDelete,
 }: ClueItemProps) => {
@@ -151,7 +155,7 @@ const ClueItem = ({
 
   const handleClueUpdate = async (field: 'text' | 'hint', value: string) => {
     try {
-      await huntService.updateClue(clue.id, { [field]: value })
+      await huntService.updateClue(huntId, clue.id, { [field]: value })
     } catch {
       // Silently fail
     }
@@ -288,17 +292,19 @@ const ClueItem = ({
         }
       }
 
-      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      // Get file extension from original file
+      const extension = file.name.split('.').pop() || 'bin'
+      const fileName = `${clueNumber}.${extension}`
       const storageRef = ref(
         storage,
-        `hunt-media/${clue.huntId}/${clue.id}/${fileName}`
+        `hunt-media/${huntId}/${fileName}`
       )
 
       const snapshot = await uploadBytes(storageRef, file)
       const storagePath = snapshot.ref.fullPath
 
       const mediaType = file.type.startsWith('image/') ? 'image' : 'video'
-      await huntService.updateClue(clue.id, {
+      await huntService.updateClue(huntId, clue.id, {
         mediaUrl: storagePath,
         mediaType: mediaType as 'image' | 'video',
       })
@@ -366,7 +372,7 @@ const ClueItem = ({
       }
 
       // Remove from database using deleteField()
-      await huntService.deleteClueMedia(clue.id)
+      await huntService.deleteClueMedia(huntId, clue.id)
 
       setMediaDialogOpen(false)
     } catch (error) {
@@ -483,7 +489,7 @@ const ClueItem = ({
               size="small"
               onClick={(e) => {
                 e.stopPropagation()
-                window.open(`/hunt/${clue.huntId}/clue/${clue.id}`, '_blank')
+                window.open(`/hunt/${huntId}/clue/${clue.id}`, '_blank')
               }}
               onPointerDown={(e) => e.stopPropagation()}
               sx={{
@@ -901,15 +907,15 @@ const ClueItem = ({
 }
 
 interface ClueListProps {
+  huntId: string
   clues: Clue[]
-  clueOrder: string[]
-  onOrderChange: (newOrder: string[]) => void
+  onOrderChange: (reorderedClues: Clue[]) => void
   huntService: HuntService
 }
 
 export const ClueList = ({
+  huntId,
   clues,
-  clueOrder,
   onOrderChange,
   huntService,
 }: ClueListProps) => {
@@ -924,20 +930,8 @@ export const ClueList = ({
     })
   )
 
-  // Sort clues based on the order array, with fallback to order property
-  const sortedClues = [...clues].sort((a, b) => {
-    const aIndex = clueOrder.indexOf(a.id)
-    const bIndex = clueOrder.indexOf(b.id)
-
-    if (aIndex !== -1 && bIndex !== -1) {
-      return aIndex - bIndex
-    }
-
-    if (aIndex !== -1) return -1
-    if (bIndex !== -1) return 1
-
-    return a.order - b.order
-  })
+  // Clues are already in the correct order from the array
+  const sortedClues = clues
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -946,19 +940,15 @@ export const ClueList = ({
       const oldIndex = sortedClues.findIndex((clue) => clue.id === active.id)
       const newIndex = sortedClues.findIndex((clue) => clue.id === over.id)
 
-      const newSortedClues = arrayMove(sortedClues, oldIndex, newIndex)
-      const newOrder = newSortedClues.map((clue) => clue.id)
+      const reorderedClues = arrayMove(sortedClues, oldIndex, newIndex)
 
-      onOrderChange(newOrder)
+      onOrderChange(reorderedClues)
     }
   }
 
   const handleDeleteClue = async (clueId: string) => {
-    const clue = clues.find((c) => c.id === clueId)
-    if (!clue) return
-
     try {
-      await huntService.deleteClue(clue.huntId, clueId)
+      await huntService.deleteClue(huntId, clueId)
     } catch {
       // Silently fail
     }
@@ -975,10 +965,12 @@ export const ClueList = ({
           items={sortedClues.map((clue) => clue.id)}
           strategy={verticalListSortingStrategy}
         >
-          {sortedClues.map((clue) => (
+          {sortedClues.map((clue, index) => (
             <ClueItem
               key={clue.id}
               clue={clue}
+              clueNumber={index + 1}
+              huntId={huntId}
               huntService={huntService}
               onDelete={handleDeleteClue}
             />

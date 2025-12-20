@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Card,
@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useHuntService } from '../hooks/HuntService'
-import type { Hunt, Clue } from '../types'
+import type { Hunt } from '../types'
 
 export const HuntList = () => {
   const [hunts, setHunts] = useState<Hunt[]>([])
@@ -33,7 +33,27 @@ export const HuntList = () => {
   const huntService = useHuntService()
   const navigate = useNavigate()
 
-  // TODO: Load hunts data
+  // Subscribe to known hunts
+  useEffect(() => {
+    const setupSubscription = async () => {
+      const unsubscribe = await huntService.subscribeToKnownHunts((hunts) => {
+        setHunts(hunts)
+      })
+      return unsubscribe
+    }
+
+    let unsubscribe: (() => void) | undefined
+
+    setupSubscription().then((unsub) => {
+      unsubscribe = unsub
+    })
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe()
+      }
+    }
+  }, [huntService])
 
   const handleCreateHunt = async () => {
     try {
@@ -85,27 +105,8 @@ export const HuntList = () => {
   const handlePrintHunt = async (hunt: Hunt, e: React.MouseEvent) => {
     e.stopPropagation()
 
-    // Get clues for this hunt
-    const clues = await new Promise<Clue[]>((resolve) => {
-      huntService.subscribeToClues(hunt.id, (clues) => {
-        resolve(clues)
-      })
-    })
-
-    // Sort clues based on hunt order
-    const sortedClues = [...clues].sort((a, b) => {
-      const aIndex = hunt.clueOrder.indexOf(a.id)
-      const bIndex = hunt.clueOrder.indexOf(b.id)
-
-      if (aIndex !== -1 && bIndex !== -1) {
-        return aIndex - bIndex
-      }
-
-      if (aIndex !== -1) return -1
-      if (bIndex !== -1) return 1
-
-      return a.order - b.order
-    })
+    // Clues are already embedded in the hunt and in the correct order
+    const sortedClues = hunt.clues
 
     // Generate QR code data
     const baseUrl = window.location.origin

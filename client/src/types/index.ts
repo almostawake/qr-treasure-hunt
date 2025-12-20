@@ -1,12 +1,5 @@
-export interface Hunt {
-  id: string
-  displayName: string
-  clueOrder: string[] // Array of clue IDs for drag-and-drop ordering
-}
-
 export interface Clue {
-  id: string
-  huntId: string
+  id: string // Generated UUID for client-side identification
   text: string
   hint: string
   mediaUrl?: string // Firebase Storage URL for photo/video
@@ -14,18 +7,13 @@ export interface Clue {
   order: number // Backup ordering system
 }
 
-export interface FirestoreHunt {
-  id: string
+export interface Hunt {
+  id: string // Firestore document ID
   displayName: string
-  clueOrder: string[]
+  clues: Clue[] // Clues embedded in the hunt document
 }
 
-export interface FirestoreClue {
-  id: string
-  huntId: string
-  text: string
-  hint: string
-  mediaUrl?: string
-  mediaType?: 'image' | 'video'
-  order: number
+export interface FirestoreHunt {
+  displayName: string
+  clues: Clue[] // Same structure in Firestore
 }

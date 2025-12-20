@@ -21,7 +21,6 @@ export const CluePage = () => {
 
   const [hunt, setHunt] = useState<Hunt | null>(null)
   const [clue, setClue] = useState<Clue | null>(null)
-  const [clues, setClues] = useState<Clue[]>([])
   const [currentView, setCurrentView] = useState<'clue' | 'hint' | 'media'>(
     'clue'
   )
@@ -75,11 +74,16 @@ export const CluePage = () => {
     }
     addToKnownHunts()
 
-    const setupSubscriptions = async () => {
-      // Subscribe to this specific hunt
-      const huntUnsubscribe = await huntService.subscribeToHunt(huntId, (hunt) => {
+    const setupSubscription = async () => {
+      // Subscribe to this specific hunt (includes clues now)
+      const unsubscribe = await huntService.subscribeToHunt(huntId, (hunt) => {
         if (hunt) {
           setHunt(hunt)
+          // Find the current clue from the hunt's clues
+          const currentClue = hunt.clues.find((c) => c.id === clueId)
+          if (currentClue) {
+            setClue(currentClue)
+          }
         } else {
           // Hunt was deleted by another user
           const removeAndRedirect = async () => {
@@ -93,33 +97,18 @@ export const CluePage = () => {
         }
       })
 
-      // Subscribe to clues changes
-      const cluesUnsubscribe = await huntService.subscribeToClues(
-        huntId,
-        (clues) => {
-          setClues(clues)
-          const currentClue = clues.find((c) => c.id === clueId)
-          if (currentClue) {
-            setClue(currentClue)
-          }
-        }
-      )
-
-      return { huntUnsubscribe, cluesUnsubscribe }
+      return unsubscribe
     }
 
-    let unsubscribes:
-      | { huntUnsubscribe: () => void; cluesUnsubscribe: () => void }
-      | undefined
+    let unsubscribe: (() => void) | undefined
 
-    setupSubscriptions().then((unsubs) => {
-      unsubscribes = unsubs
+    setupSubscription().then((unsub) => {
+      unsubscribe = unsub
     })
 
     return () => {
-      if (unsubscribes) {
-        unsubscribes.huntUnsubscribe()
-        unsubscribes.cluesUnsubscribe()
+      if (unsubscribe) {
+        unsubscribe()
       }
     }
   }, [huntId, clueId, huntService, navigate])
@@ -133,11 +122,9 @@ export const CluePage = () => {
   }
 
   // Find clue number in the sequence
-  const clueNumber =
-    hunt.clueOrder.indexOf(clueId || '') + 1 ||
-    clues.findIndex((c) => c.id === clueId) + 1
+  const clueNumber = hunt.clues.findIndex((c) => c.id === clueId) + 1
 
-  const totalClues = hunt.clueOrder.length || clues.length
+  const totalClues = hunt.clues.length
 
   const handleViewChange = (
     _event: React.MouseEvent<HTMLElement>,

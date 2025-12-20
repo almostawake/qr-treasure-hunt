@@ -2,12 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Allow read and write access to hunts collection
+    // (clues are now embedded in hunt documents)
     match /hunts/{huntId} {
-      allow read, write: if true;
-    }
-    
-    // Allow read and write access to clues collection
-    match /clues/{clueId} {
       allow read, write: if true;
     }
   }

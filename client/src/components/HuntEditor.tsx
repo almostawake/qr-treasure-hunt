@@ -27,7 +27,6 @@ export const HuntEditor = () => {
   const huntService = useHuntService()
 
   const [hunt, setHunt] = useState<Hunt | null>(null)
-  const [clues, setClues] = useState<Clue[]>([])
   const [huntName, setHuntName] = useState('')
   const [isEditing, setIsEditing] = useState(false)
 
@@ -44,9 +43,9 @@ export const HuntEditor = () => {
     }
     addToKnownHunts()
 
-    const setupSubscriptions = async () => {
-      // Subscribe to this specific hunt
-      const huntUnsubscribe = await huntService.subscribeToHunt(id, (hunt) => {
+    const setupSubscription = async () => {
+      // Subscribe to this specific hunt (includes clues now)
+      const unsubscribe = await huntService.subscribeToHunt(id, (hunt) => {
         if (hunt) {
           setHunt(hunt)
           setHuntName(hunt.displayName)
@@ -63,43 +62,32 @@ export const HuntEditor = () => {
         }
       })
 
-      // Subscribe to clues changes
-      const cluesUnsubscribe = await huntService.subscribeToClues(
-        id,
-        (clues) => {
-          setClues(clues)
-        }
-      )
-
-      return { huntUnsubscribe, cluesUnsubscribe }
+      return unsubscribe
     }
 
-    let unsubscribes:
-      | { huntUnsubscribe: () => void; cluesUnsubscribe: () => void }
-      | undefined
+    let unsubscribe: (() => void) | undefined
 
-    setupSubscriptions().then((unsubs) => {
-      unsubscribes = unsubs
+    setupSubscription().then((unsub) => {
+      unsubscribe = unsub
     })
 
     return () => {
-      if (unsubscribes) {
-        unsubscribes.huntUnsubscribe()
-        unsubscribes.cluesUnsubscribe()
+      if (unsubscribe) {
+        unsubscribe()
       }
     }
   }, [id, huntService, navigate])
 
   // Auto-focus hunt name field for empty hunts (desktop only)
   useEffect(() => {
-    if (hunt && clues.length === 0 && !hunt.displayName) {
+    if (hunt && hunt.clues.length === 0 && !hunt.displayName) {
       // Only auto-focus on desktop - mobile browsers block programmatic keyboard opening
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
       if (!isMobile) {
         setIsEditing(true)
       }
     }
-  }, [hunt, clues.length])
+  }, [hunt])
 
   const handleNameChange = async (newName: string) => {
     if (!id || !hunt) return
@@ -136,11 +124,11 @@ export const HuntEditor = () => {
     }
   }
 
-  const handleClueOrderChange = async (newOrder: string[]) => {
+  const handleClueOrderChange = async (reorderedClues: Clue[]) => {
     if (!id) return
 
     try {
-      await huntService.updateClueOrder(id, newOrder)
+      await huntService.updateClueOrder(id, reorderedClues)
     } catch {
       // Silently fail
     }
@@ -149,20 +137,8 @@ export const HuntEditor = () => {
   const handlePrint = async () => {
     if (!hunt) return
 
-    // Sort clues based on hunt order
-    const sortedClues = [...clues].sort((a, b) => {
-      const aIndex = hunt.clueOrder.indexOf(a.id)
-      const bIndex = hunt.clueOrder.indexOf(b.id)
-
-      if (aIndex !== -1 && bIndex !== -1) {
-        return aIndex - bIndex
-      }
-
-      if (aIndex !== -1) return -1
-      if (bIndex !== -1) return 1
-
-      return a.order - b.order
-    })
+    // Clues are already in the correct order in the array
+    const sortedClues = hunt.clues
 
     // Generate QR code data
     const baseUrl = window.location.origin
@@ -457,7 +433,7 @@ export const HuntEditor = () => {
 
       {/* Content */}
       <Box sx={{ flex: 1, overflow: 'auto', p: { xs: 2, sm: 3 }, pb: 10 }}>
-        {clues.length === 0 ? (
+        {hunt.clues.length === 0 ? (
           <Paper
             sx={{
               p: { xs: 3, sm: 5 },
@@ -532,8 +508,8 @@ export const HuntEditor = () => {
           </Paper>
         ) : (
           <ClueList
-            clues={clues}
-            clueOrder={hunt.clueOrder}
+            huntId={id!}
+            clues={hunt.clues}
             onOrderChange={handleClueOrderChange}
             huntService={huntService}
           />
