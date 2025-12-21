@@ -24,3 +24,17 @@ Build before deployment to ensure no compilation errors across the board.
 Then deploy.
 
 `npm run deploy`
+
+or
+
+`npm run deploy:quick` to just redeploy the client
+
+## Deploying to a new project
+
+Don't forget
+
+`gcloud auth login`
+
+`gsutil cors set cors.json gs://your-project-id.firebasestorage.app`
+
+.. to allow the client app to access files on firebase storage
