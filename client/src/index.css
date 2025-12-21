@@ -10,3 +10,10 @@ body {
 button {
   font-family: inherit;
 }
+
+/* Mobile print scaling - prevents truncation on left side */
+@media print and (max-width: 768px) {
+  body {
+    zoom: 80%;
+  }
+}
