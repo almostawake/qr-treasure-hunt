@@ -746,34 +746,45 @@ const ClueItem = ({
                 borderColor:
                   isDragOver && !isMobile ? 'primary.main' : 'transparent',
                 transition: 'all 0.2s ease',
-                cursor: 'pointer',
+                cursor: isMobile ? 'default' : 'pointer',
               }}
-              onClick={handleFilePickerClick}
+              onClick={isMobile ? undefined : handleFilePickerClick}
             >
-              <CloudUploadIcon
-                sx={{
-                  fontSize: 80,
-                  color: isDragOver && !isMobile ? 'primary.main' : 'grey.400',
-                  mb: 2,
-                }}
-              />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                {isMobile ? 'Choose file' : 'Choose file or drag and drop'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Upload an image or video as a visual hint
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<CloudUploadIcon />}
-                sx={{ mt: 3 }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleFilePickerClick()
-                }}
-              >
-                Choose File
-              </Button>
+              {isMobile ? (
+                // Mobile: Simple button only
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={handleFilePickerClick}
+                >
+                  Add Photo or Video
+                </Button>
+              ) : (
+                // Desktop: Cloud icon, description, and button
+                <>
+                  <CloudUploadIcon
+                    sx={{
+                      fontSize: 80,
+                      color: isDragOver ? 'primary.main' : 'grey.400',
+                      mb: 2,
+                    }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Upload an image or video as a visual hint
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mt: 3 }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleFilePickerClick()
+                    }}
+                  >
+                    Choose File
+                  </Button>
+                </>
+              )}
             </Box>
           ) : (
             // Case 3: Existing media - show as drop target (no hints)
