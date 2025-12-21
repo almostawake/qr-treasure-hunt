@@ -26,27 +26,27 @@ export const CluePage = () => {
   )
   const [mediaDisplayUrl, setMediaDisplayUrl] = useState<string | null>(null)
 
-  // Resolve storage path to URL dynamically
+  // Resolve storage path to URL using cache
   useEffect(() => {
+    let currentMediaUrl = clue?.mediaUrl
+
     const resolveMediaUrl = async () => {
-      if (!clue?.mediaUrl) {
+      if (!currentMediaUrl) {
         setMediaDisplayUrl(null)
         return
       }
 
       // If it's already a full URL (old format), use it directly
-      if (clue.mediaUrl.startsWith('http://') || clue.mediaUrl.startsWith('https://')) {
-        setMediaDisplayUrl(clue.mediaUrl)
+      if (currentMediaUrl.startsWith('http://') || currentMediaUrl.startsWith('https://')) {
+        setMediaDisplayUrl(currentMediaUrl)
         return
       }
 
-      // It's a storage path - resolve it dynamically
+      // It's a storage path - resolve it using cache
       try {
         const { getFirebaseServices } = await import('../hooks/ApplicationState')
-        const { storage } = await getFirebaseServices()
-        const { ref, getDownloadURL } = await import('firebase/storage')
-        const storageRef = ref(storage, clue.mediaUrl)
-        const url = await getDownloadURL(storageRef)
+        const { storageCache } = await getFirebaseServices()
+        const url = await storageCache.getFileUrl(currentMediaUrl)
         setMediaDisplayUrl(url)
       } catch {
         // If resolution fails, set to null
@@ -55,6 +55,17 @@ export const CluePage = () => {
     }
 
     resolveMediaUrl()
+
+    // Cleanup: revoke object URL when component unmounts or mediaUrl changes
+    return () => {
+      if (currentMediaUrl && !currentMediaUrl.startsWith('http')) {
+        import('../hooks/ApplicationState').then(({ getFirebaseServices }) => {
+          getFirebaseServices().then(({ storageCache }) => {
+            storageCache.revokeFileUrl(currentMediaUrl)
+          })
+        })
+      }
+    }
   }, [clue?.mediaUrl])
 
   const handleScanNext = () => {
@@ -112,6 +123,27 @@ export const CluePage = () => {
       }
     }
   }, [huntId, clueId, huntService, navigate])
+
+  // Prefetch all media files when hunt loads
+  useEffect(() => {
+    if (!hunt) return
+
+    const prefetchMedia = async () => {
+      const mediaPaths = hunt.clues
+        .filter((clue) => clue.mediaUrl && !clue.mediaUrl.startsWith('http'))
+        .map((clue) => clue.mediaUrl!)
+
+      if (mediaPaths.length > 0) {
+        const { getFirebaseServices } = await import(
+          '../hooks/ApplicationState'
+        )
+        const { storageCache } = await getFirebaseServices()
+        storageCache.prefetch(mediaPaths)
+      }
+    }
+
+    prefetchMedia()
+  }, [hunt])
 
   if (!hunt || !clue) {
     return (

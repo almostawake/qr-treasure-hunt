@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
+import { FirebaseStorageCache } from './FirebaseStorageCache'
 
 const getFirebaseConfig = async () => {
   if (import.meta.env.DEV) {
@@ -39,11 +40,13 @@ const initializeFirebase = async () => {
     }
   }
 
-  return { app, db, storage }
+  const storageCache = new FirebaseStorageCache(storage)
+
+  return { app, db, storage, storageCache }
 }
 
 export const firebasePromise = initializeFirebase()
 export const getFirebaseServices = async () => {
-  const { db, storage } = await firebasePromise
-  return { db, storage }
+  const { db, storage, storageCache } = await firebasePromise
+  return { db, storage, storageCache }
 }

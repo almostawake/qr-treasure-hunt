@@ -89,6 +89,27 @@ export const HuntEditor = () => {
     }
   }, [hunt])
 
+  // Prefetch all media files when hunt loads
+  useEffect(() => {
+    if (!hunt) return
+
+    const prefetchMedia = async () => {
+      const mediaPaths = hunt.clues
+        .filter((clue) => clue.mediaUrl && !clue.mediaUrl.startsWith('http'))
+        .map((clue) => clue.mediaUrl!)
+
+      if (mediaPaths.length > 0) {
+        const { getFirebaseServices } = await import(
+          '../hooks/ApplicationState'
+        )
+        const { storageCache } = await getFirebaseServices()
+        storageCache.prefetch(mediaPaths)
+      }
+    }
+
+    prefetchMedia()
+  }, [hunt])
+
   const handleNameChange = async (newName: string) => {
     if (!id || !hunt) return
 

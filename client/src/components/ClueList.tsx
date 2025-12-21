@@ -27,7 +27,6 @@ import {
 import {
   ref,
   uploadBytes,
-  getDownloadURL,
   deleteObject,
 } from 'firebase/storage'
 import {
@@ -52,7 +51,6 @@ import type { HuntService } from '../hooks/HuntService'
 
 interface ClueItemProps {
   clue: Clue
-  clueNumber: number
   huntId: string
   huntService: HuntService
   onDelete: (clueId: string) => void
@@ -60,7 +58,6 @@ interface ClueItemProps {
 
 const ClueItem = ({
   clue,
-  clueNumber,
   huntId,
   huntService,
   onDelete,
@@ -94,31 +91,32 @@ const ClueItem = ({
     setHintText(clue.hint)
   }, [clue.hint])
 
-  // Resolve storage path to URL dynamically
+  // Resolve storage path to URL using cache
   useEffect(() => {
+    let currentMediaUrl = clue.mediaUrl
+
     const resolveMediaUrl = async () => {
-      if (!clue.mediaUrl) {
+      if (!currentMediaUrl) {
         setMediaDisplayUrl(null)
         return
       }
 
       // If it's already a full URL (old format), use it directly
       if (
-        clue.mediaUrl.startsWith('http://') ||
-        clue.mediaUrl.startsWith('https://')
+        currentMediaUrl.startsWith('http://') ||
+        currentMediaUrl.startsWith('https://')
       ) {
-        setMediaDisplayUrl(clue.mediaUrl)
+        setMediaDisplayUrl(currentMediaUrl)
         return
       }
 
-      // It's a storage path - resolve it dynamically
+      // It's a storage path - resolve it using cache
       try {
         const { getFirebaseServices } = await import(
           '../hooks/ApplicationState'
         )
-        const { storage } = await getFirebaseServices()
-        const storageRef = ref(storage, clue.mediaUrl)
-        const url = await getDownloadURL(storageRef)
+        const { storageCache } = await getFirebaseServices()
+        const url = await storageCache.getFileUrl(currentMediaUrl)
         setMediaDisplayUrl(url)
       } catch {
         // If resolution fails, set to null
@@ -127,6 +125,17 @@ const ClueItem = ({
     }
 
     resolveMediaUrl()
+
+    // Cleanup: revoke object URL when component unmounts or mediaUrl changes
+    return () => {
+      if (currentMediaUrl && !currentMediaUrl.startsWith('http')) {
+        import('../hooks/ApplicationState').then(({ getFirebaseServices }) => {
+          getFirebaseServices().then(({ storageCache }) => {
+            storageCache.revokeFileUrl(currentMediaUrl)
+          })
+        })
+      }
+    }
   }, [clue.mediaUrl])
 
   // Cleanup object URLs on unmount
@@ -275,7 +284,7 @@ const ClueItem = ({
     try {
       const file = selectedFile
       const { getFirebaseServices } = await import('../hooks/ApplicationState')
-      const { storage } = await getFirebaseServices()
+      const { storage, storageCache } = await getFirebaseServices()
 
       // Delete old file from storage if replacing
       const hasExistingMedia =
@@ -286,6 +295,10 @@ const ClueItem = ({
         try {
           const oldStorageRef = ref(storage, clue.mediaUrl)
           await deleteObject(oldStorageRef)
+          // Invalidate old cache entry
+          if (clue.mediaUrl) {
+            await storageCache.invalidate(clue.mediaUrl)
+          }
         } catch (deleteError) {
           // Continue even if deletion fails (file might not exist)
           console.warn('Failed to delete old media file:', deleteError)
@@ -294,7 +307,7 @@ const ClueItem = ({
 
       // Get file extension from original file
       const extension = file.name.split('.').pop() || 'bin'
-      const fileName = `${clueNumber}.${extension}`
+      const fileName = `${clue.id}-${Date.now()}.${extension}`
       const storageRef = ref(
         storage,
         `hunt-media/${huntId}/${fileName}`
@@ -308,6 +321,9 @@ const ClueItem = ({
         mediaUrl: storagePath,
         mediaType: mediaType as 'image' | 'video',
       })
+
+      // Prefetch the new file into cache in the background
+      storageCache.prefetch([storagePath])
 
       // Cleanup the object URL preview; Firestore change will refresh the display
       if (selectedPreviewUrl) {
@@ -923,7 +939,6 @@ export const ClueList = ({
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
-        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -966,11 +981,10 @@ export const ClueList = ({
           items={sortedClues.map((clue) => clue.id)}
           strategy={verticalListSortingStrategy}
         >
-          {sortedClues.map((clue, index) => (
+          {sortedClues.map((clue) => (
             <ClueItem
               key={clue.id}
               clue={clue}
-              clueNumber={index + 1}
               huntId={huntId}
               huntService={huntService}
               onDelete={handleDeleteClue}
