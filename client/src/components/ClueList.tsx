@@ -948,7 +948,8 @@ export const ClueList = ({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        delay: 400,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
