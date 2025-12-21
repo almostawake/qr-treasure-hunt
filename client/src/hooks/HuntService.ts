@@ -72,8 +72,37 @@ export class HuntService {
 
   // Delete a hunt
   async deleteHunt(huntId: string): Promise<void> {
-    const { db } = await getFirebaseServices()
-    await deleteDoc(doc(db, 'hunts', huntId))
+    const { db, storage } = await getFirebaseServices()
+
+    // Get hunt to find all media files
+    const huntRef = doc(db, 'hunts', huntId)
+    const huntDoc = await getDoc(huntRef)
+
+    if (huntDoc.exists()) {
+      const hunt = convertDocumentSnapshotToHunt(huntDoc)
+      if (hunt) {
+        // Delete all media files from storage
+        const mediaUrls = hunt.clues
+          .filter((clue) => clue.mediaUrl && !clue.mediaUrl.startsWith('http'))
+          .map((clue) => clue.mediaUrl!)
+
+        // Delete files in parallel
+        await Promise.all(
+          mediaUrls.map(async (mediaUrl) => {
+            try {
+              const { ref, deleteObject } = await import('firebase/storage')
+              const storageRef = ref(storage, mediaUrl)
+              await deleteObject(storageRef)
+            } catch {
+              // Continue even if file deletion fails
+            }
+          })
+        )
+      }
+    }
+
+    // Delete the hunt document
+    await deleteDoc(huntRef)
   }
 
   // Create a new clue in a hunt
@@ -167,7 +196,7 @@ export class HuntService {
 
   // Delete a clue
   async deleteClue(huntId: string, clueId: string): Promise<void> {
-    const { db } = await getFirebaseServices()
+    const { db, storage } = await getFirebaseServices()
     const huntRef = doc(db, 'hunts', huntId)
 
     // Get current hunt
@@ -176,6 +205,20 @@ export class HuntService {
 
     const hunt = convertDocumentSnapshotToHunt(huntDoc)
     if (!hunt) throw new Error('Hunt not found')
+
+    // Find the clue to check for media
+    const clueToDelete = hunt.clues.find((clue) => clue.id === clueId)
+
+    // Delete media file from storage if it exists
+    if (clueToDelete?.mediaUrl && !clueToDelete.mediaUrl.startsWith('http')) {
+      try {
+        const { ref, deleteObject } = await import('firebase/storage')
+        const storageRef = ref(storage, clueToDelete.mediaUrl)
+        await deleteObject(storageRef)
+      } catch {
+        // Continue even if file deletion fails
+      }
+    }
 
     // Remove the clue
     const updatedClues = hunt.clues.filter((clue) => clue.id !== clueId)
