@@ -48,9 +48,8 @@ export const CluePage = () => {
         const { storageCache } = await getFirebaseServices()
         const url = await storageCache.getFileUrl(currentMediaUrl)
         setMediaDisplayUrl(url)
-      } catch (error) {
+      } catch {
         // If resolution fails, set to null
-        console.error('Failed to resolve media URL:', currentMediaUrl, error)
         setMediaDisplayUrl(null)
       }
     }

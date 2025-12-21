@@ -118,9 +118,8 @@ const ClueItem = ({
         const { storageCache } = await getFirebaseServices()
         const url = await storageCache.getFileUrl(currentMediaUrl)
         setMediaDisplayUrl(url)
-      } catch (error) {
+      } catch {
         // If resolution fails, set to null
-        console.error('Failed to resolve media URL:', currentMediaUrl, error)
         setMediaDisplayUrl(null)
       }
     }
@@ -360,7 +359,6 @@ const ClueItem = ({
     const fileInput = document.createElement('input')
     fileInput.type = 'file'
     fileInput.accept = 'image/*,video/*'
-    fileInput.capture = 'environment'
     fileInput.onchange = (e) => {
       if (e.target && (e.target as HTMLInputElement).files) {
         handleFileUpload(e as unknown as React.ChangeEvent<HTMLInputElement>)

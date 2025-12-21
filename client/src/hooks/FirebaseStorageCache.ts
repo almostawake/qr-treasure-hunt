@@ -28,24 +28,16 @@ export class FirebaseStorageCache {
 
     if (cached) {
       const entry = cached as CacheEntry
-      console.log('Cache hit for:', path)
       return entry.blob
     }
 
-    console.log('Cache miss, fetching from storage:', path)
-    try {
-      const blob = await getBlob(ref(this.storage, path))
-      const entry: CacheEntry = {
-        blob,
-        timestamp: Date.now(),
-      }
-      await db.put('files', entry, path)
-      console.log('Successfully cached:', path)
-      return blob
-    } catch (error) {
-      console.error('Failed to fetch file from storage:', path, error)
-      throw error
+    const blob = await getBlob(ref(this.storage, path))
+    const entry: CacheEntry = {
+      blob,
+      timestamp: Date.now(),
     }
+    await db.put('files', entry, path)
+    return blob
   }
 
   async getFileUrl(path: string): Promise<string> {
